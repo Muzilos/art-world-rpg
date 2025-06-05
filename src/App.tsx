@@ -2,47 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, ChevronsUp, ChevronsDown, MapPin, Palette, Trophy, Coffee, Briefcase, Book, Home, Users, Clock, ShoppingBag, Feather, Shield, Target, Zap, TrendingUp, Shirt, Percent, Landmark, Handshake, Star, Award, BarChart } from 'lucide-react';
 
 // --- HELPER FUNCTIONS ---
-
-// Simple text wrapping for canvas
-const wrapText = (ctx, text, x, y, maxWidth, lineHeight, fillStyle = '#FFFFFF', font = '16px Noto Sans', textAlign = 'left') => {
-    ctx.fillStyle = fillStyle;
-    ctx.font = font;
-    ctx.textAlign = textAlign;
-
-    const words = text.split(' ');
-    let line = '';
-    let testLine = '';
-    let lines = [];
-
-    for (let n = 0; n < words.length; n++) {
-        testLine = line + words[n] + ' ';
-        const metrics = ctx.measureText(testLine);
-        const testWidth = metrics.width;
-        if (testWidth > maxWidth && n > 0) {
-            lines.push(line);
-            line = words[n] + ' ';
-        } else {
-            line = testLine;
-        }
-    }
-    lines.push(line);
-
-    let textBlockHeight = 0;
-    lines.forEach((singleLine, index) => {
-        let currentY = y + (index * lineHeight);
-        if (textAlign === 'center') {
-             ctx.fillText(singleLine.trim(), x + maxWidth / 2, currentY);
-        } else if (textAlign === 'right') {
-             ctx.fillText(singleLine.trim(), x + maxWidth, currentY);
-        }
-        else {
-             ctx.fillText(singleLine.trim(), x, currentY);
-        }
-        textBlockHeight += lineHeight;
-    });
-    return textBlockHeight;
-};
-
 // Updated text wrapper: returns an array of lines and the total height.
 const getWrappedLines = (ctx, text, maxWidth, font) => {
   ctx.font = font;
@@ -63,6 +22,33 @@ const getWrappedLines = (ctx, text, maxWidth, font) => {
   }
   lines.push(line.trim());
   return lines;
+};
+
+const wrapAndDrawText = (ctx, text, x, y, maxWidth, lineHeight, style) => {
+  // Set default styles
+  const { fillStyle = '#FFFFFF', font = '16px Noto Sans', textAlign = 'left' } = style;
+
+  // Get the lines of text
+  const lines = getWrappedLines(ctx, text, maxWidth, font);
+
+  ctx.fillStyle = fillStyle;
+  ctx.font = font;
+  ctx.textAlign = textAlign;
+  ctx.textBaseline = 'middle'; // Consistent vertical alignment
+
+  lines.forEach((line, index) => {
+    const currentY = y + (index * lineHeight);
+    let currentX = x;
+    if (textAlign === 'center') {
+      currentX = x + maxWidth / 2;
+    } else if (textAlign === 'right') {
+      currentX = x + maxWidth;
+    }
+    ctx.fillText(line, currentX, currentY);
+  });
+
+  // Return the total height of the text block, which is useful information
+  return lines.length * lineHeight;
 };
 
 // A* Pathfinding (Unchanged from previous version)
@@ -387,8 +373,12 @@ const ArtGalleryRPG = () => {
             dialogue = interactionResult.dialogue || dialogue;
             menu = interactionResult.menu || menu;
             battle = interactionResult.battle || battle;
+            // This consumes the key press so it doesn't re-trigger
+            // while the dialogue box is opening.
+            keysRef.current[' '] = false;
+            keysRef.current['enter'] = false;
           }
-          keys[' '] = false; keys['enter'] = false; // Prevent repeated interaction
+          // keys[' '] = false; keys['enter'] = false; // Prevent repeated interaction
         }
 
         // Exit Check
@@ -452,23 +442,42 @@ const ArtGalleryRPG = () => {
   // --- INTERACTIONS & CORE LOGIC ---
   const checkInteraction = (player, currentMapData) => {
     const p = player;
-    let facingTileX = Math.floor(p.x + 0.5);
-    let facingTileY = Math.floor(p.y + 0.5);
+    const currentTileX = Math.floor(p.x + 0.5);
+    const currentTileY = Math.floor(p.y + 0.5);
 
+    // Create a list of tiles to check for interactions
+    const tilesToCheck = [
+      // First, check the tile the player is standing on
+      `${currentTileX},${currentTileY}`
+    ];
+
+    // Second, determine the tile the player is facing and add it to the list
+    let facingTileX = currentTileX;
+    let facingTileY = currentTileY;
     if (p.facing === 'up') facingTileY -= 1;
     if (p.facing === 'down') facingTileY += 1;
     if (p.facing === 'left') facingTileX -= 1;
     if (p.facing === 'right') facingTileX += 1;
 
-    const interactionKey = `${facingTileX},${facingTileY}`;
-    if (currentMapData.objects && currentMapData.objects[interactionKey]) {
-      const obj = currentMapData.objects[interactionKey];
-      return handleInteraction(obj.interaction, obj, player);
+    // Add the facing tile only if it's different from the current one
+    const facingTileKey = `${facingTileX},${facingTileY}`;
+    if (facingTileKey !== tilesToCheck[0]) {
+      tilesToCheck.push(facingTileKey);
     }
-    return null;
+
+    // Loop through the tiles and return the first interaction found
+    for (const key of tilesToCheck) {
+      if (currentMapData.objects && currentMapData.objects[key]) {
+        const obj = currentMapData.objects[key];
+        // Pass the player state to handleInteraction
+        return handleInteraction(obj.interaction, obj, p);
+      }
+    }
+
+    return null; // No interaction found on any relevant tile
   };
 
-  const handleInteraction = (interactionType, objData) => {
+  const handleInteraction = (interactionType, objData, player) => {
     if (interactionType === 'talk_npc') {
       handleNPCTalk(objData);
       return null;
@@ -829,7 +838,7 @@ const ArtGalleryRPG = () => {
       drawRoundedRect(boxX, boxY, boxWidth, boxHeight, 10, 'rgba(30,41,59,0.95)', { color: 'rgba(71,85,105,1)', width: 2 });
 
       // Title
-      wrapText(ctx, d.title || "Notification", boxX, boxY + padding, boxWidth, 28, '#A78BFA', 'bold 20px Noto Sans', 'center');
+      wrapAndDrawText(ctx, d.title || "Notification", boxX, boxY + padding, boxWidth, 28, { fillStyle: '#A78BFA', font: 'bold 20px Noto Sans', textAlign: 'center' });
 
       // --- Text Area & Scrolling Logic ---
       const textAreaX = boxX + padding;
@@ -880,7 +889,7 @@ const ArtGalleryRPG = () => {
         const btnX = boxX + padding;
         const btnWidth = boxWidth - padding * 2;
         drawRoundedRect(btnX, optionsY, btnWidth, buttonHeight, 5, '#7C3AED', { color: '#6D28D9', width: 1 });
-        wrapText(ctx, opt.text, btnX, optionsY + buttonHeight / 2 - (lineHeight / 3), btnWidth, lineHeight, '#FFFFFF', 'bold 15px Noto Sans', 'center');
+        wrapAndDrawText(ctx, opt.text, btnX, optionsY + buttonHeight / 2 - (lineHeight / 3), btnWidth, lineHeight, { fillStyle: '#FFFFFF', font: 'bold 15px Noto Sans', textAlign: 'center' });
         addClickable(btnX, optionsY, btnWidth, buttonHeight, opt.action);
       });
     }
@@ -892,25 +901,201 @@ const ArtGalleryRPG = () => {
       const padding = 20; const lineHeight = 20; const itemHeight = 30; const buttonHeight = 40; const buttonMargin = 8; let currentY = boxY + padding;
       ctx.fillStyle = 'rgba(15,23,42,0.9)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawRoundedRect(boxX, boxY, boxWidth, boxHeight, 10, 'rgba(30,41,59,0.98)', { color: 'rgba(71,85,105,1)', width: 2 });
-      const drawMenuTitle = (title) => { wrapText(ctx, title, boxX, currentY + 10, boxWidth, 28, '#A78BFA', 'bold 24px Noto Sans', 'center'); currentY += 45; };
-      const drawMenuText = (text, color = '#CBD5E1', size = '15px', align = 'left', isBold = false, customMaxWidth = null) => { const textMaxWidth = customMaxWidth || boxWidth - padding * 2; const textX = align === 'center' ? boxX + (boxWidth - textMaxWidth) / 2 : boxX + padding; currentY += wrapText(ctx, text, textX, currentY, textMaxWidth, lineHeight, color, `${isBold ? 'bold ' : ''}${size} Noto Sans`, align); };
-      const drawMenuButton = (text, action, bgColor = '#7C3AED', textColor = '#FFFFFF', disabled = false) => { const btnX = boxX + padding; const btnWidth = boxWidth - padding * 2; const finalBgColor = disabled ? '#4B5563' : bgColor; const finalTextColor = disabled ? '#9CA3AF' : textColor; drawRoundedRect(btnX, currentY, btnWidth, buttonHeight, 5, finalBgColor); wrapText(ctx, text, btnX, currentY + buttonHeight / 2 - lineHeight / 3, btnWidth, lineHeight, finalTextColor, 'bold 15px Noto Sans', 'center'); if (!disabled) addClickable(btnX, currentY, btnWidth, buttonHeight, action); currentY += buttonHeight + buttonMargin; };
+      const drawMenuTitle = (title) => { wrapAndDrawText(ctx, title, boxX, currentY + 10, boxWidth, 28, { fillStyle: '#A78BFA', font: 'bold 24px Noto Sans', textAlign: 'center' }); currentY += 45; };
+      const drawMenuText = (text, color = '#CBD5E1', size = '15px', align = 'left', isBold = false, customMaxWidth = null) => {
+        const textMaxWidth = customMaxWidth || boxWidth - padding * 2;
+        const textX = align === 'center' ? boxX + (boxWidth - textMaxWidth) / 2 : boxX + padding;
+
+        currentY += wrapAndDrawText(ctx, text, textX, currentY, textMaxWidth, lineHeight, {
+          fillStyle: color,
+          font: `${isBold ? 'bold ' : ''}${size} Noto Sans`,
+          textAlign: align
+        });
+      }; const drawMenuButton = (text, action, bgColor = '#7C3AED', textColor = '#FFFFFF', disabled = false) => { const btnX = boxX + padding; const btnWidth = boxWidth - padding * 2; const finalBgColor = disabled ? '#4B5563' : bgColor; const finalTextColor = disabled ? '#9CA3AF' : textColor; drawRoundedRect(btnX, currentY, btnWidth, buttonHeight, 5, finalBgColor); wrapAndDrawText(ctx, text, btnX, currentY + buttonHeight / 2 - lineHeight / 3, btnWidth, lineHeight, { fillStyle: finalTextColor, font: 'bold 15px Noto Sans', textAlign: 'center' }); if (!disabled) addClickable(btnX, currentY, btnWidth, buttonHeight, action); currentY += buttonHeight + buttonMargin; };
       const drawProgressBar = (value, max, barColor = '#22C55E') => { const barWidth = boxWidth - padding * 2; const barX = boxX + padding; drawRoundedRect(barX, currentY, barWidth, 12, 6, '#334155'); const progressWidth = Math.max(0, (value / max) * barWidth); if (progressWidth > 0) drawRoundedRect(barX, currentY, progressWidth, 12, 6, barColor); currentY += 18; }
       const p = gameState.player;
       // Menu specific drawing
-      if (menu === 'status') {/* ... status menu ... */ drawMenuTitle("Player Status"); drawMenuText(`Title: ${p.title}`, '#A78BFA', '16px', 'left', true); drawMenuText(`Level: ${p.level} (EXP: ${p.exp.toFixed(0)} / ${(p.level * 100 * (1 + (p.level - 1) * 0.1)).toFixed(0)})`); drawProgressBar(p.exp, p.level * 100 * (1 + (p.level - 1) * 0.1)); drawMenuText(`Money: $${p.money}`, '#4ADE80'); drawMenuText(`Reputation: ${p.reputation}`, '#FACC15'); drawMenuText(`Energy: ${p.energy}/100`); drawProgressBar(p.energy, 100, '#38BDF8'); currentY += lineHeight; drawMenuText("Skills:", '#A78BFA', '18px', 'left', true); Object.entries(p.skills).forEach(([skill, val]) => drawMenuText(`${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${val.toFixed(1)}/10`)); currentY += lineHeight; drawMenuText("Equipment:", '#A78BFA', '18px', 'left', true); drawMenuText(`Brush: ${p.equipment.brush}`); drawMenuText(`Outfit: ${p.equipment.outfit}`); }
-      else if (menu === 'inventory') {/* ... inventory menu ... */ drawMenuTitle("Inventory"); const inv = p.inventory; drawMenuText(`Paintings: ${inv.paintings}`, '#FDE047'); drawMenuText(`Sculptures: ${inv.sculptures}`, '#FDE047'); drawMenuText(`Digital Art: ${inv.digitalArt}`, '#FDE047'); currentY += lineHeight / 2; ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(boxX + padding, currentY); ctx.lineTo(boxX + boxWidth - padding, currentY); ctx.stroke(); currentY += lineHeight / 2; drawMenuText(`Coffee: ${inv.coffee}`, '#FDE047'); drawMenuText(`Business Cards: ${inv.businessCards}`, '#FDE047'); }
-      else if (menu === 'quests') { drawMenuTitle("Quests & Achievements"); drawMenuText("Active Quests:", '#A78BFA', '18px', 'left', true); if (p.quests.length > 0) { p.quests.map(id => questDefinitions[id]).filter(q => q).forEach(q => { drawRoundedRect(boxX + padding, currentY, boxWidth - padding * 2, itemHeight * 2, 5, 'rgba(71,85,105,0.5)'); wrapText(ctx, q.name, boxX + padding * 1.5, currentY + 5, boxWidth - padding * 3, lineHeight, '#C4B5FD', 'bold 15px Noto Sans'); wrapText(ctx, q.description, boxX + padding * 1.5, currentY + 5 + lineHeight, boxWidth - padding * 3, 14, '#D1D5DB', '13px Noto Sans'); currentY += itemHeight * 2 + buttonMargin; }) } else { drawMenuText("No active quests.", '#9CA3AF') } currentY += lineHeight * 0.5; drawMenuText("Completed Quests:", '#A78BFA', '18px', 'left', true);/*...completed quests...*/currentY += lineHeight * 0.5; drawMenuText("Achievements:", '#A78BFA', '18px', 'left', true);/*...achievements...*/ }
-      else if (menu === 'market') { drawMenuTitle("Market Analysis"); const marketStatus = gameState.marketMultiplier > 1.1 ? "Hot!" : gameState.marketMultiplier < 0.9 ? "Cool..." : "Stable"; const colorClass = gameState.marketMultiplier > 1.1 ? '#4ADE80' : gameState.marketMultiplier < 0.9 ? '#F87171' : '#FACC15'; drawMenuText(`Multiplier: ${gameState.marketMultiplier.toFixed(2)}x`, colorClass, '24px', 'center', true); drawMenuText(`Status: ${marketStatus}`, colorClass, '18px', 'center'); currentY += lineHeight; drawMenuText("Affects art sale prices. Changes daily. Higher Business skill also helps!", '#9CA3AF', '13px', 'center'); }
-      else if (menu === 'create_art') { drawMenuTitle("Create Art"); drawMenuText(`Energy: ${p.energy}/100 | Artistic: ${p.skills.artistic.toFixed(1)}`, '#CBD5E1', '15px', 'center'); currentY += lineHeight * 0.5; drawMenuButton("Paint (25 EGY, Skill 1+)", () => createArt('painting'), '#3B82F6'); drawMenuButton("Sculpt (40 EGY, Skill 3+)", () => createArt('sculpture'), '#22C55E', undefined, p.skills.artistic < 3); drawMenuButton("Digital Art (20 EGY, Skill 5+)", () => createArt('digital'), '#8B5CF6', undefined, p.skills.artistic < 5); }
-      else if (menu === 'rest') { drawMenuTitle("Rest"); drawMenuText(`Time: ${gameState.time}:00, Day ${gameState.day} | Energy: ${p.energy}/100`, '#CBD5E1', '15px', 'center'); currentY += lineHeight * 0.5; drawMenuButton("Nap (2 Hrs, +30 Energy)", () => rest('nap'), '#38BDF8'); drawMenuButton("Sleep (Until 8 AM, +100 Energy)", () => rest('sleep'), '#64748B'); }
-      else if (menu === 'study') { drawMenuTitle("Study"); drawMenuText(`Energy: ${p.energy}/100`, '#CBD5E1', '15px', 'center'); currentY += lineHeight * 0.5; drawMenuButton("Artistic (15 EGY)", () => study('artistic'), '#EF4444'); drawMenuButton("Networking (15 EGY)", () => study('networking'), '#F59E0B'); drawMenuButton("Business (15 EGY)", () => study('business'), '#10B981'); drawMenuButton("Curating (15 EGY)", () => study('curating'), '#0EA5E9'); }
-      else if (menu === 'shop_pro_art_supplies') { drawMenuTitle("Pro Art Supplies (SoHo)"); drawMenuText(`Money: $${p.money}`, '#CBD5E1', '15px', 'center'); currentY += lineHeight * 0.5; drawMenuButton(`Pro Brush Set ($500) ${p.equipment.brush === 'Pro Brush Set' ? "(Owned)" : ""}`, () => buyEquipmentItem('brush', 'Pro Brush Set', 500, 1, 'artistic'), '#14B8A6', undefined, p.equipment.brush === 'Pro Brush Set'); drawMenuButton("Premium Business Cards (20x) ($50)", () => buyConsumableItem('Business Cards', 'businessCards', 50, 20), '#F97316'); }
-      else if (menu === 'shop_fashion') { drawMenuTitle("Chic Boutique (SoHo)"); drawMenuText(`Money: $${p.money}`, '#CBD5E1', '15px', 'center'); currentY += lineHeight * 0.5; drawMenuButton(`Designer Outfit ($1000) ${p.equipment.outfit === 'Designer Outfit' ? "(Owned)" : ""}`, () => buyEquipmentItem('outfit', 'Designer Outfit', 1000, 1, 'networking'), '#EC4899', undefined, p.equipment.outfit === 'Designer Outfit'); drawMenuText("More styles coming soon!", '#6B7280', '12px', 'center'); }
-      else { drawMenuText(`Menu: ${menu} (Canvas Incomplete)`); }
+      if (menu === 'status') {/* ... status menu ... */ drawMenuTitle("Player Status"); drawMenuText(`Title: ${p.title}`, '#A78BFA', '16px', 'left', true); drawMenuText(`Level: ${p.level} (EXP: ${p.exp.toFixed(0)} / ${(p.level * 100 * (1 + (p.level - 1) * 0.1)).toFixed(0)})`); drawProgressBar(p.exp, p.level * 100 * (1 + (p.levedrawMenuTextl - 1) * 0.1)); (`Money: $${p.money}`, '#4ADE80'); drawMenuText(`Reputation: ${p.reputation}`, '#FACC15'); drawMenuText(`Energy: ${p.energy}/100`); drawProgressBar(p.energy, 100, '#38BDF8'); currentY += lineHeight; drawMenuText("Skills:", '#A78BFA', '18px', 'left', true); Object.entries(p.skills).forEach(([skill, val]) => drawMenuText(`${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${val.toFixed(1)}/10`)); currentY += lineHeight; drawMenuText("Equipment:", '#A78BFA', '18px', 'left', true); drawMenuText(`Brush: ${p.equipment.brush}`); drawMenuText(`Outfit: ${p.equipment.outfit}`); }
+      else if (menu === 'inventory') {
+        /* ... inventory menu ... */
+        drawMenuTitle("Inventory");
+        const inv = p.inventory;
+        drawMenuText(`Paintings: ${inv.paintings}`, '#FDE047');
+        drawMenuText(`Sculptures: ${inv.sculptures}`, '#FDE047');
+        drawMenuText(`Digital Art: ${inv.digitalArt}`, '#FDE047');
+        currentY += lineHeight / 2; ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(boxX + padding, currentY);
+        ctx.lineTo(boxX + boxWidth - padding, currentY);
+        ctx.stroke(); currentY += lineHeight / 2;
+        drawMenuText(`Coffee: ${inv.coffee}`, '#FDE047');
+        drawMenuText(`Business Cards: ${inv.businessCards}`, '#FDE047');
+      }
+      else if (menu === 'quests') {
+        drawMenuTitle("Quests & Achievements");
+
+        // --- Active Quests Section ---
+        wrapAndDrawText(ctx, "Active Quests:", boxX + padding, currentY, boxWidth - padding * 2, lineHeight, {
+          fillStyle: '#A78BFA',
+          font: 'bold 18px Noto Sans',
+          textAlign: 'left'
+        });
+        currentY += 30;
+
+        if (p.quests.length > 0) {
+          p.quests.map(id => questDefinitions[id]).filter(q => q).forEach(q => {
+            drawRoundedRect(boxX + padding, currentY, boxWidth - padding * 2, itemHeight * 2.5, 5, 'rgba(71,85,105,0.5)');
+
+            // Corrected Quest Name
+            wrapAndDrawText(ctx, q.name, boxX + padding * 1.5, currentY + 18, boxWidth - padding * 3, lineHeight, {
+              fillStyle: '#C4B5FD',
+              font: 'bold 15px Noto Sans',
+              textAlign: 'left'
+            });
+
+            // Corrected Quest Description
+            wrapAndDrawText(ctx, q.description, boxX + padding * 1.5, currentY + 40, boxWidth - padding * 3, 14, {
+              fillStyle: '#D1D5DB',
+              font: '13px Noto Sans',
+              textAlign: 'left'
+            });
+
+            currentY += itemHeight * 2.5 + buttonMargin;
+          });
+        } else {
+          wrapAndDrawText(ctx, "No active quests.", boxX + padding, currentY, boxWidth - padding * 2, lineHeight, {
+            fillStyle: '#9CA3AF',
+            font: '15px Noto Sans',
+            textAlign: 'left'
+          });
+          currentY += 30;
+        }
+
+        currentY += lineHeight * 0.5;
+
+        // --- Other Sections ---
+        wrapAndDrawText(ctx, "Completed Quests:", boxX + padding, currentY, boxWidth - padding * 2, lineHeight, {
+          fillStyle: '#A78BFA',
+          font: 'bold 18px Noto Sans',
+          textAlign: 'left'
+        });
+        currentY += 30;
+        /*...completed quests...*/
+
+        wrapAndDrawText(ctx, "Achievements:", boxX + padding, currentY, boxWidth - padding * 2, lineHeight, {
+          fillStyle: '#A78BFA',
+          font: 'bold 18px Noto Sans',
+          textAlign: 'left'
+        });
+        currentY += 30;
+        /*...achievements...*/
+      }
+
+      else if (menu === 'market') {
+        drawMenuTitle("Market Analysis");
+        const marketStatus = gameState.marketMultiplier > 1.1 ? "Hot!" : gameState.marketMultiplier < 0.9 ? "Cool..." : "Stable";
+        const colorClass = gameState.marketMultiplier > 1.1 ? '#4ADE80' : gameState.marketMultiplier < 0.9 ? '#F87171' : '#FACC15';
+
+        wrapAndDrawText(ctx, `Multiplier: ${gameState.marketMultiplier.toFixed(2)}x`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: colorClass,
+          font: 'bold 24px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        wrapAndDrawText(ctx, `Status: ${marketStatus}`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: colorClass,
+          font: '18px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        wrapAndDrawText(ctx, "Affects art sale prices. Changes daily. Higher Business skill also helps!", boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#9CA3AF',
+          font: '13px Noto Sans',
+          textAlign: 'center'
+        });
+      }
+
+      else if (menu === 'create_art') {
+        drawMenuTitle("Create Art");
+
+        wrapAndDrawText(ctx, `Energy: ${p.energy}/100 | Artistic: ${p.skills.artistic.toFixed(1)}`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#CBD5E1',
+          font: '15px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        drawMenuButton("Paint (25 EGY, Skill 1+)", () => createArt('painting'), '#3B82F6');
+        drawMenuButton("Sculpt (40 EGY, Skill 3+)", () => createArt('sculpture'), '#22C55E', undefined, p.skills.artistic < 3);
+        drawMenuButton("Digital Art (20 EGY, Skill 5+)", () => createArt('digital'), '#8B5CF6', undefined, p.skills.artistic < 5);
+      }
+
+      else if (menu === 'rest') {
+        drawMenuTitle("Rest");
+
+        wrapAndDrawText(ctx, `Time: ${gameState.time}:00, Day ${gameState.day} | Energy: ${p.energy}/100`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#CBD5E1',
+          font: '15px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        drawMenuButton("Nap (2 Hrs, +30 Energy)", () => rest('nap'), '#38BDF8');
+        drawMenuButton("Sleep (Until 8 AM, +100 Energy)", () => rest('sleep'), '#64748B');
+      }
+
+      else if (menu === 'study') {
+        drawMenuTitle("Study");
+
+        wrapAndDrawText(ctx, `Energy: ${p.energy}/100`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#CBD5E1',
+          font: '15px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        drawMenuButton("Artistic (15 EGY)", () => study('artistic'), '#EF4444');
+        drawMenuButton("Networking (15 EGY)", () => study('networking'), '#F59E0B');
+        drawMenuButton("Business (15 EGY)", () => study('business'), '#10B981');
+        drawMenuButton("Curating (15 EGY)", () => study('curating'), '#0EA5E9');
+      }
+
+      else if (menu === 'shop_pro_art_supplies') {
+        drawMenuTitle("Pro Art Supplies (SoHo)");
+
+        wrapAndDrawText(ctx, `Money: $${p.money}`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#CBD5E1',
+          font: '15px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        drawMenuButton(`Pro Brush Set ($500) ${p.equipment.brush === 'Pro Brush Set' ? "(Owned)" : ""}`, () => buyEquipmentItem('brush', 'Pro Brush Set', 500, 1, 'artistic'), '#14B8A6', undefined, p.equipment.brush === 'Pro Brush Set');
+        drawMenuButton("Premium Business Cards (20x) ($50)", () => buyConsumableItem('Business Cards', 'businessCards', 50, 20), '#F97316');
+      }
+
+      else if (menu === 'shop_fashion') {
+        drawMenuTitle("Chic Boutique (SoHo)");
+
+        wrapAndDrawText(ctx, `Money: $${p.money}`, boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#CBD5E1',
+          font: '15px Noto Sans',
+          textAlign: 'center'
+        });
+        currentY += 30;
+
+        drawMenuButton(`Designer Outfit ($1000) ${p.equipment.outfit === 'Designer Outfit' ? "(Owned)" : ""}`, () => buyEquipmentItem('outfit', 'Designer Outfit', 1000, 1, 'networking'), '#EC4899', undefined, p.equipment.outfit === 'Designer Outfit');
+
+        wrapAndDrawText(ctx, "More styles coming soon!", boxX, currentY, boxWidth, lineHeight, {
+          fillStyle: '#6B7280',
+          font: '12px Noto Sans',
+          textAlign: 'center'
+        });
+      } else { drawMenuText(`Menu: ${menu} (Canvas Incomplete)`); }
       const closeBtnYActual = Math.min(currentY + buttonMargin, boxY + boxHeight - padding - buttonHeight); // Ensure close button is within bounds
       drawRoundedRect(boxX + padding, closeBtnYActual, boxWidth - padding * 2, buttonHeight, 5, '#DC2626');
-      wrapText(ctx, "Close", boxX + padding, closeBtnYActual + buttonHeight / 2 - lineHeight / 3, boxWidth - padding * 2, lineHeight, '#FFFFFF', 'bold 16px Noto Sans', 'center');
+      wrapAndDrawText(ctx, "Close", boxX + padding, closeBtnYActual + buttonHeight / 2 - lineHeight / 3, boxWidth - padding * 2, lineHeight, { fillStyle: '#FFFFFF', font: 'bold 16px Noto Sans', textAlign: 'center' });
       addClickable(boxX + padding, closeBtnYActual, boxWidth - padding * 2, buttonHeight, closeMenu);
     }
 
@@ -919,17 +1104,17 @@ const ArtGalleryRPG = () => {
       const battle = gameState.battle; const player = gameState.player; const boxWidth = canvas.width * 0.95; const boxHeight = canvas.height * 0.9; const boxX = (canvas.width - boxWidth) / 2; const boxY = (canvas.height - boxHeight) / 2; const padding = 15; const lineHeight = 18; let currentY = boxY + padding;
       ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       drawRoundedRect(boxX, boxY, boxWidth, boxHeight, 10, 'rgba(30,41,59,0.98)', { color: 'rgba(220,38,38,0.7)', width: 2 });
-      wrapText(ctx, battle.opponent.name, boxX, currentY + 10, boxWidth, 24, '#F87171', 'bold 20px Noto Sans', 'center'); currentY += 30;
-      wrapText(ctx, `Composure: ${battle.opponent.hp}/${battle.opponent.maxHp}`, boxX, currentY, boxWidth, lineHeight, '#E2E8F0', '14px Noto Sans', 'center'); currentY += lineHeight;
+      wrapAndDrawText(ctx, battle.opponent.name, boxX, currentY + 10, boxWidth, 24, { fillStyle: '#F87171', font: 'bold 20px Noto Sans', textAlign: 'center' }); currentY += 30;
+      wrapAndDrawText(ctx, `Composure: ${battle.opponent.hp}/${battle.opponent.maxHp}`, boxX, currentY, boxWidth, lineHeight, { fillStyle: '#E2E8F0', font: '14px Noto Sans', textAlign: 'center' }); currentY += lineHeight;
       const oppBarX = boxX + padding * 2; const barWidth = boxWidth - padding * 4; drawRoundedRect(oppBarX, currentY, barWidth, 10, 5, '#475569'); drawRoundedRect(oppBarX, currentY, Math.max(0, (battle.opponent.hp / battle.opponent.maxHp) * barWidth), 10, 5, '#EF4444'); currentY += 25;
-      const logBoxHeight = 70; drawRoundedRect(boxX + padding, currentY, boxWidth - padding * 2, logBoxHeight, 5, 'rgba(51,65,85,0.7)'); let logTextY = currentY + 10; battle.log.slice(-3).forEach(entry => { wrapText(ctx, `> ${entry}`, boxX + padding + 10, logTextY, boxWidth - padding * 2 - 20, 15, '#9CA3AF', '13px Noto Sans'); logTextY += 16; }); currentY += logBoxHeight + 15;
-      wrapText(ctx, `${player.title} (You)`, boxX, currentY + 10, boxWidth, 22, '#60A5FA', 'bold 18px Noto Sans', 'center'); currentY += 28;
-      wrapText(ctx, `Composure: ${battle.player.hp}/${battle.player.maxHp}`, boxX, currentY, boxWidth, lineHeight, '#E2E8F0', '14px Noto Sans', 'center'); currentY += lineHeight;
+      const logBoxHeight = 70; drawRoundedRect(boxX + padding, currentY, boxWidth - padding * 2, logBoxHeight, 5, 'rgba(51,65,85,0.7)'); let logTextY = currentY + 10; battle.log.slice(-3).forEach(entry => { wrapAndDrawText(ctx, `> ${entry}`, boxX + padding + 10, logTextY, boxWidth - padding * 2 - 20, 15, { fillStyle: '#9CA3AF', font: '13px Noto Sans', textAlign: 'left' }); logTextY += 16; }); currentY += logBoxHeight + 15;
+      wrapAndDrawText(ctx, `${player.title} (You)`, boxX, currentY + 10, boxWidth, 22, { fillStyle: '#60A5FA', font: 'bold 18px Noto Sans', textAlign: 'center' }); currentY += 28;
+      wrapAndDrawText(ctx, `Composure: ${battle.player.hp}/${battle.player.maxHp}`, boxX, currentY, boxWidth, lineHeight, { fillStyle: '#E2E8F0', font: '14px Noto Sans', textAlign: 'center' }); currentY += lineHeight;
       drawRoundedRect(oppBarX, currentY, barWidth, 10, 5, '#475569'); drawRoundedRect(oppBarX, currentY, Math.max(0, (battle.player.hp / battle.player.maxHp) * barWidth), 10, 5, '#3B82F6'); currentY += 15;
-      wrapText(ctx, `Energy: ${player.energy}`, boxX, currentY, boxWidth, 14, '#9CA3AF', '13px Noto Sans', 'center'); currentY += 25;
+      wrapAndDrawText(ctx, `Energy: ${player.energy}`, boxX, currentY, boxWidth, 14, { fillStyle: '#9CA3AF', font: '13px Noto Sans', textAlign: 'center' }); currentY += 25;
       if (battle.turn === 'player') {
-        const actionButtonHeight = 35; const actionButtonWidth = (boxWidth - padding * 2 - padding) / 2; battleActions.forEach((action, idx) => { const btnX = boxX + padding + (idx % 2) * (actionButtonWidth + padding); const btnY = currentY + Math.floor(idx / 2) * (actionButtonHeight + 10); const isDisabled = player.energy < action.cost; const bgColor = isDisabled ? '#4B5563' : '#7C3AED'; const textColor = isDisabled ? '#9CA3AF' : '#FFFFFF'; drawRoundedRect(btnX, btnY, actionButtonWidth, actionButtonHeight, 5, bgColor); wrapText(ctx, `${action.name} (${action.cost}E)`, btnX, btnY + actionButtonHeight / 2 - 8, actionButtonWidth, lineHeight, textColor, 'bold 13px Noto Sans', 'center'); if (!isDisabled) { addClickable(btnX, btnY, actionButtonWidth, actionButtonHeight, () => handleBattleAction(action)); } });
-      } else { wrapText(ctx, "Critic is thinking...", boxX, currentY + 20, boxWidth, 20, '#FACC15', 'italic 16px Noto Sans', 'center'); }
+        const actionButtonHeight = 35; const actionButtonWidth = (boxWidth - padding * 2 - padding) / 2; battleActions.forEach((action, idx) => { const btnX = boxX + padding + (idx % 2) * (actionButtonWidth + padding); const btnY = currentY + Math.floor(idx / 2) * (actionButtonHeight + 10); const isDisabled = player.energy < action.cost; const bgColor = isDisabled ? '#4B5563' : '#7C3AED'; const textColor = isDisabled ? '#9CA3AF' : '#FFFFFF'; drawRoundedRect(btnX, btnY, actionButtonWidth, actionButtonHeight, 5, bgColor); wrapAndDrawText(ctx, `${action.name} (${action.cost}E)`, btnX, btnY + actionButtonHeight / 2 - 8, actionButtonWidth, lineHeight, { fillStyle: textColor, font: 'bold 13px Noto Sans', textAlign: 'center' }); if (!isDisabled) { addClickable(btnX, btnY, actionButtonWidth, actionButtonHeight, () => handleBattleAction(action)); } });
+      } else { wrapAndDrawText(ctx, "Critic is thinking...", boxX, currentY + 20, boxWidth, 20, { fillStyle: '#FACC15', font: 'italic 16px Noto Sans', textAlign: 'center' }); }
     }
 
   }, [gameState, animationFrame]);
