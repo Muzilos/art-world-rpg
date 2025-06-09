@@ -498,7 +498,7 @@ export const GameCanvas = ({ gameState, currentMap, onCanvasClick, setGameState 
                 energy: 100 // Full energy after sleep
               }
             }));
-          }, '#64748B', gameState.time < 21); // Disable sleep button before 9 PM
+          }, gameState.time < 21 ? '#64748B' : '#3B82F6', gameState.time < 21); // Use blue color when enabled
           break;
       }
 
