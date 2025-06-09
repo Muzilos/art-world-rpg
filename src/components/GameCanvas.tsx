@@ -679,8 +679,17 @@ export const GameCanvas = ({ gameState, currentMap, onCanvasClick, setGameState 
     });
 
     if (clickedObject) {
-      // For doors (exits), just move to the object - the interaction will be handled automatically
+      // For doors (exits), set up the pending interaction and move to the object
       if (clickedObject.data.interaction === 'exit') {
+        setGameState(prev => ({
+          ...prev,
+          pendingInteraction: {
+            x: clickedObject.x,
+            y: clickedObject.y,
+            type: 'exit',
+            data: clickedObject.data
+          }
+        }));
         onCanvasClick(worldX, worldY);
       } else {
         // For other interactive objects, trigger their menu

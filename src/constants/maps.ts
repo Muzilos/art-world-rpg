@@ -7,7 +7,7 @@ export const MAPS: Maps = {
     height: 15,
     bgm: 'studio_theme',
     tiles: [
-      [1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
       [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
       [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -54,7 +54,7 @@ export const MAPS: Maps = {
       '7,0': {
         to: 'gallery',
         x: 7,
-        y: 0
+        y: 1
       }
     }
   },
@@ -120,16 +120,59 @@ export const MAPS: Maps = {
         type: 'info_board',
         interaction: 'check_events',
         name: 'Events Board'
+      },
+      '7,1': {
+        type: 'studio_door',
+        interaction: 'exit',
+        name: 'Studio Door'
+      },
+      '0,6': {
+        type: 'brooklyn_door',
+        interaction: 'exit',
+        name: 'Brooklyn Door'
+      },
+      '0,7': {
+        type: 'brooklyn_door',
+        interaction: 'exit',
+        name: 'Brooklyn Door'
+      },
+      '19,7': {
+        type: 'soho_door',
+        interaction: 'exit',
+        name: 'SoHo Door'
+      },
+      '19,8': {
+        type: 'soho_door',
+        interaction: 'exit',
+        name: 'SoHo Door'
       }
     },
     exits: {
-      '5,0': { to: 'studio', x: 4, y: 8 },
-      '6,0': { to: 'studio', x: 5, y: 8 },
-      '7,0': { to: 'studio', x: 5, y: 8 },
-      '0,6': { to: 'brooklyn', x: 18, y: 7 },
-      '0,7': { to: 'brooklyn', x: 18, y: 8 },
-      '19,6': { to: 'soho', x: 1, y: 7 },
-      '19,7': { to: 'soho', x: 1, y: 8 }
+      '7,1': {
+        to: 'studio',
+        x: 7,
+        y: 1
+      },
+      '0,6': {
+        to: 'brooklyn',
+        x: 18,
+        y: 6
+      },
+      '0,7': {
+        to: 'brooklyn',
+        x: 18,
+        y: 7
+      },
+      '19,7': {
+        to: 'soho',
+        x: 1,
+        y: 6
+      },
+      '19,8': {
+        to: 'soho',
+        x: 1,
+        y: 7
+      }
     }
   },
   brooklyn: {
@@ -186,11 +229,29 @@ export const MAPS: Maps = {
         type: 'npc_muralist',
         name: 'Maya Rodriguez',
         interaction: 'talk_npc'
+      },
+      '19,6': {
+        type: 'gallery_door',
+        interaction: 'exit',
+        name: 'Gallery Door'
+      },
+      '19,7': {
+        type: 'gallery_door',
+        interaction: 'exit',
+        name: 'Gallery Door'
       }
     },
     exits: {
-      '19,6': { to: 'gallery', x: 1, y: 6 },
-      '19,7': { to: 'gallery', x: 1, y: 7 }
+      '19,6': {
+        to: 'gallery',
+        x: 1,
+        y: 6
+      },
+      '19,7': {
+        to: 'gallery',
+        x: 1,
+        y: 7
+      }
     }
   },
   soho: {
@@ -247,11 +308,29 @@ export const MAPS: Maps = {
         type: 'npc_dealer',
         name: 'Philippe Dubois',
         interaction: 'talk_npc'
+      },
+      '0,6': {
+        type: 'gallery_door',
+        interaction: 'exit',
+        name: 'Gallery Door'
+      },
+      '0,7': {
+        type: 'gallery_door',
+        interaction: 'exit',
+        name: 'Gallery Door'
       }
     },
     exits: {
-      '0,3': { to: 'gallery', x: 18, y: 6 },
-      '0,4': { to: 'gallery', x: 18, y: 7 }
+      '0,6': {
+        to: 'gallery',
+        x: 18,
+        y: 7
+      },
+      '0,7': {
+        to: 'gallery',
+        x: 18,
+        y: 8
+      }
     }
   }
 }; 

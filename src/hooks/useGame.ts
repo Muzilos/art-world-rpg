@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import type { GameState, GameMap, MenuType } from '../types/game';
+import type { GameState, GameMap, MenuType, Player } from '../types/game';
 import { checkInteraction, handleInteraction, updatePlayerPosition } from '../utils/gameLogic';
 import { aStar } from '../utils/pathfinding';
 import { MAPS } from '../constants/maps';
@@ -55,7 +55,7 @@ export const useGame = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
   const currentMap = MAPS[gameState.currentMap];
   const mapData = useMemo(() => ({
-    id: currentMap.id,
+    id: gameState.currentMap,
     name: currentMap.name,
     width: currentMap.width,
     height: currentMap.height,
@@ -79,7 +79,7 @@ export const useGame = () => {
       };
     }),
     exits: currentMap.exits
-  }), [currentMap]);
+  }), [currentMap, gameState.currentMap]);
 
   const keysRef = useRef<Keys>({});
 
@@ -175,12 +175,8 @@ export const useGame = () => {
         if (player.path && player.path.length > 0) {
           player = updatePlayerPosition(player, keys['shift'] || false);
         }
-        // After movement, check for pending interaction
-        if (
-          (!player.path || player.path.length === 0) &&
-          prev.pendingInteraction &&
-          prev.pendingInteraction.type
-        ) {
+        // Handle pending interactions
+        if (prev.pendingInteraction) {
           // Check if player is on the object tile
           const playerTileX = Math.floor(player.x / 32);
           const playerTileY = Math.floor(player.y / 32);
@@ -189,25 +185,30 @@ export const useGame = () => {
           
           // Check if player is within 1 tile of the object
           if (Math.abs(objTileX - playerTileX) <= 1 && Math.abs(objTileY - playerTileY) <= 1) {
-            const result = handleInteraction(prev.pendingInteraction.type, prev.pendingInteraction.data, player, currentMap);
-            if (result) {
-              // Handle map transition if present
-              if (result.mapTransition) {
+            if (prev.pendingInteraction.type === 'exit') {
+              // Get the exit data from the current map
+              const exitKey = `${objTileX},${objTileY}`;
+              const exitData = mapData.exits?.[exitKey];
+              
+              if (exitData) {
                 return {
                   ...prev,
                   player: {
                     ...player,
-                    x: result.mapTransition.position.x,
-                    y: result.mapTransition.position.y,
+                    x: exitData.x * 32,
+                    y: exitData.y * 32,
                     path: [] // Clear any existing path
                   },
-                  currentMap: result.mapTransition.map,
+                  currentMap: exitData.to,
                   pendingInteraction: null
                 };
               }
-              // Handle regular menu interaction
-              menu = result.menu as MenuType;
-              return { ...prev, player, menu, pendingInteraction: null, currentMap, dialogue, battle, time, day, gameTick: gameTick + 1 };
+            } else {
+              const result = handleInteraction(prev.pendingInteraction.type, prev.pendingInteraction.data, player, mapData, prev.currentMap);
+              if (result) {
+                menu = result.menu as MenuType;
+                return { ...prev, player, menu, pendingInteraction: null, currentMap, dialogue, battle, time, day, gameTick: gameTick + 1 };
+              }
             }
           }
         }
