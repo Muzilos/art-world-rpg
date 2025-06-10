@@ -1,3 +1,5 @@
+// types/game.ts - Updated to include market system
+
 export interface Position {
   x: number;
   y: number;
@@ -29,13 +31,39 @@ export interface Player {
   achievements: string[];
 }
 
+// Updated InventoryItem to include market value
 export interface InventoryItem {
   id: string;
   name: string;
   type: 'art' | 'equipment' | 'consumable';
-  value?: number;
+  value?: number; // Market value for artwork
   description: string;
   quantity: number;
+}
+
+// Market system types
+export interface ArtworkValue {
+  baseValue: number;
+  currentValue: number;
+  qualityMultiplier: number;
+  marketTrend: 'rising' | 'stable' | 'falling';
+  demandLevel: 'low' | 'medium' | 'high';
+}
+
+export interface MarketConditions {
+  paintings: ArtworkValue;
+  sculptures: ArtworkValue;
+  digitalArt: ArtworkValue;
+  lastUpdate: number;
+}
+
+export interface MarketNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'market_boom' | 'market_crash' | 'trend_change' | 'demand_shift';
+  artType: 'paintings' | 'sculptures' | 'digitalArt';
+  timestamp: number;
 }
 
 export interface Quest {
@@ -146,7 +174,7 @@ export interface DialogueState {
   text: string;
   options: {
     text: string;
-    action: () => void;
+    action: (func: () => void) => void;
   }[];
   scroll?: number;
 }
@@ -157,6 +185,7 @@ export type MenuType =
   | 'quests' 
   | 'market' 
   | 'create_art' 
+  | 'talk_npc'
   | 'rest' 
   | 'study' 
   | 'dialogue' 
@@ -172,7 +201,6 @@ export type MenuType =
   | 'curator'
   | 'shop'
   | null;
-
 export interface GameState {
   player: Player;
   currentMap: string;
@@ -189,6 +217,7 @@ export interface GameState {
   marketMultiplier: number;
   gameTick: number;
   pendingInteraction: PendingInteraction | null;
+  marketConditions: MarketConditions | null; // Added market conditions
 }
 
 export interface QuestDefinition {
@@ -259,7 +288,10 @@ export interface NPCData {
     type: 'art' | 'equipment' | 'consumable';
     description: string;
     price: number;
+    value?: number; // Added value for market calculations
   };
+  x?: number; // Added position for market calculations
+  y?: number;
 }
 
 export interface PendingInteraction {
@@ -267,4 +299,4 @@ export interface PendingInteraction {
   y: number;
   type: string;
   data: ObjectData;
-} 
+}

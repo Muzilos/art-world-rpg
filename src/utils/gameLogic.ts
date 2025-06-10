@@ -73,7 +73,7 @@ export const checkInteraction = (player: Player, currentMap: GameMap): ObjectDat
     const [objX, objY] = key.split(',').map(Number);
     if (Math.abs(objX - playerTileX) <= 1 && Math.abs(objY - playerTileY) <= 1) {
       return {
-        sprite: obj.type,
+        // sprite: obj.type,
         interaction: obj.interaction,
         name: obj.name,
         type: obj.type,

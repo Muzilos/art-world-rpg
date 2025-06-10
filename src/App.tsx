@@ -15,6 +15,8 @@ function App() {
     handleKeyUp,
     activeMenu,
     closeMenu,
+    createArt,
+    closeDialogue,
   } = useGame();
 
   React.useEffect(() => {
@@ -41,6 +43,8 @@ function App() {
             currentMap={currentMapData}
             onCanvasClick={handleCanvasClick}
             setGameState={setGameState}
+            createArt={createArt}
+            closeDialogue={closeDialogue}
           />
         </div>
         {activeMenu === 'quests' && (

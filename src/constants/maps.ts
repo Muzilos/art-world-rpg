@@ -89,42 +89,42 @@ export const MAPS: Maps = {
       '3,2': {
         type: 'npc_collector',
         name: 'Victoria Sterling',
-        interaction: 'talk_npc'
+        interaction: 'talk_npc' // Make sure this is 'talk_npc' not something else
       },
       '10,5': {
         type: 'npc_artist',
         name: 'Jackson Park',
-        interaction: 'teach_artist'
+        interaction: 'talk_npc'
       },
       '6,10': {
         type: 'npc_critic',
         name: 'Eleanor Sharp',
-        interaction: 'battle_critic'
+        interaction: 'talk_npc'
       },
       '15,7': {
         type: 'npc_gallerist',
         name: 'Marcus Chen',
-        interaction: 'judge_gallerist'
+        interaction: 'talk_npc'
       },
       '12,8': {
         type: 'npc_influencer',
         name: 'Luna Vega',
-        interaction: 'talk_influencer'
+        interaction: 'talk_npc'
       },
       '8,12': {
         type: 'npc_dealer',
         name: 'Rico Martinez',
-        interaction: 'talk_dealer'
+        interaction: 'talk_npc'
       },
       '4,8': {
         type: 'npc_historian',
         name: 'Dr. Elizabeth Black',
-        interaction: 'talk_historian'
+        interaction: 'talk_npc'
       },
       '16,12': {
         type: 'npc_curator',
         name: 'Sophia Chen',
-        interaction: 'talk_curator'
+        interaction: 'talk_npc'
       },
       '5,15': {
         type: 'gallery_door',
