@@ -913,7 +913,7 @@ export const GameCanvas = ({
         break;
       case 'battle':
         currentY = BattleMenu({
-          currentY, gameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage, setGameState
+          currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage, setGameState
         });
         break;
       case 'talk_npc':

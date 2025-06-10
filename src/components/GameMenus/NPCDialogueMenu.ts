@@ -4,14 +4,21 @@ import type { NPCData } from '../../types/game';
 import { getNPCDialogue, type NPCDialogue } from '../../logic/npcDialogueLogic';
 
 interface NPCDialogueMenuProps extends BaseMenuProps {
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
-  getNPCDialogue: (npcData: NPCData, player: Player, relationshipLevel: number) => NPCDialogue;
+  setGameState: (updater: (prev: GameState) => GameState) => void;
+  getNPCDialogue: (npcData: NPCData, player: Player, relationshipLevel: number, actions: {
+    setGameState: (updater: (prev: GameState) => GameState) => void;
+    showMessage: (title: string, text: string, options?: DialogueOption[]) => void;
+    network: () => void;
+    openSellArtMenu: () => void;
+    startCritiqueBattle: () => void;
+  }) => NPCDialogue;
 }
 
 export const NPCDialogueMenu = ({
   currentY,
   gameState,
   setGameState,
+  getNPCDialogue,
   drawMenuButtonHelper,
   drawMenuTextHelper,
   drawMenuTitleHelper,

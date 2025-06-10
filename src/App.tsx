@@ -2,7 +2,6 @@ import React from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { GameUI } from './components/GameUI';
 import { useGame } from './hooks/useGame';
-import { QuestLog } from './components/QuestLog';
 import './App.css';
 import { MAPS } from './constants/maps';
 import { createCloseDialogue } from './logic/closeDialogueLogic';
@@ -14,8 +13,6 @@ function App() {
     setGameState,
     handleKeyDown,
     handleKeyUp,
-    activeMenu,
-    closeMenu,
     createArt,
   } = useGame();
 
@@ -27,7 +24,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
+
     return cleanup;
   }, [handleKeyDown, handleKeyUp]);
 
@@ -48,20 +45,6 @@ function App() {
             closeDialogue={closeDialogue}
           />
         </div>
-        {activeMenu === 'quests' && (
-          <div className="menu-overlay" onClick={closeMenu}>
-            <div onClick={(e) => e.stopPropagation()}>
-              <QuestLog gameState={gameState} />
-            </div>
-          </div>
-        )}
-        {activeMenu === 'artDealer' && (
-          <div className="menu-overlay" onClick={closeMenu}>
-            <div onClick={(e) => e.stopPropagation()}>
-              {/* Your ArtDealer component */}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

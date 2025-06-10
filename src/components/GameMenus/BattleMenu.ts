@@ -1,9 +1,11 @@
 // components/GameMenus/BattleMenu.ts
+import { handleBattleAction } from '../../logic/battleLogic';
 import type { BaseMenuProps } from '../../types/game';
 
 export const BattleMenu = ({
   currentY,
   gameState,
+  setGameState,
   drawMenuButtonHelper,
   drawMenuTextHelper,
   drawMenuTitleHelper,
@@ -27,10 +29,13 @@ export const BattleMenu = ({
       // You can hook up battle attack logic here
     });
 
-    drawMenuButtonHelper('Defend', () => {
-      // Hook up defend logic here
+    drawMenuButtonHelper('Defend Concept', () => {
+      setGameState(prev => {
+        const battleUpdate = handleBattleAction('defend_concept', prev);
+        return { ...prev, ...battleUpdate };
+      });
     });
-
+    
     drawMenuButtonHelper('Flee', () => {
       // Hook up flee logic here
     });
