@@ -184,7 +184,7 @@ export const useGame = () => {
         const startNode = { x: Math.floor(gameState.player.x / 32), y: Math.floor(gameState.player.y / 32) };
         const endNode = { x: tileX, y: tileY };
         const path = aStar(startNode, endNode, mapData.tiles);
-
+        
         if (path.length > 0) {
           setGameState(prev => ({
             ...prev,
@@ -199,22 +199,8 @@ export const useGame = () => {
         }
       }
     }
-
-    // Add a new function to handle battle actions
-    const performBattleAction = useCallback((actionId: string) => {
-      setGameState(prev => {
-        if (!prev.battle || prev.battle.turn !== 'player') return prev;
-        
-        const nextState = handleBattleAction(actionId, prev);
-  
-        // We need to inject the real closeDialogue function into the result
-        if (nextState.dialogue) {
-            nextState.dialogue.options[0].action = createCloseDialogue(setGameState);
-        }
-        
-        return nextState;
-      });
-    }, [setGameState]);
+    
+  }, [mapData, gameState.player]);
 
   // Update createArt function to use market values
   const createArt = useCallback((artType: string) => {
@@ -337,18 +323,18 @@ export const useGame = () => {
 
         // Store previous market conditions for comparison
         const previousMarketConditions = prev.marketConditions;
-
+        
         // Update market conditions
         const marketConditions = updateMarketConditions(prev.marketConditions, gameTick);
-
+        
         // Check for market notifications (only when market actually changes)
         if (gameTick % 500 === 0 && previousMarketConditions && marketConditions !== previousMarketConditions) {
           const notifications = checkForMarketNotifications(previousMarketConditions, marketConditions, player);
-
+          
           // Show most important notification as dialogue
           if (notifications.length > 0 && !dialogue && !menu && !battle) {
             const priorityNotification = notifications.find(n => n.type === 'market_boom' || n.type === 'market_crash') || notifications[0];
-
+            
             return {
               ...prev,
               player,
@@ -362,7 +348,7 @@ export const useGame = () => {
             };
           }
         }
-
+        
         // Update inventory values every 100 ticks (every 5 seconds)
         if (gameTick % 100 === 0) {
           player = updateInventoryValues(player, marketConditions);
@@ -535,7 +521,6 @@ export const useGame = () => {
     handleCanvasClick,
     setGameState,
     createArt,
-    closeDialogue,
-    performBattleAction,
+    closeDialogue
   };
 };
