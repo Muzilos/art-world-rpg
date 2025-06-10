@@ -1,4 +1,3 @@
-import React from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { GameUI } from './components/GameUI';
 import { useGame } from './hooks/useGame';
@@ -11,22 +10,9 @@ function App() {
     gameState,
     handleCanvasClick,
     setGameState,
-    handleKeyDown,
-    handleKeyUp,
     createArt,
+    performBattleAction,
   } = useGame();
-
-  React.useEffect(() => {
-    const cleanup = () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return cleanup;
-  }, [handleKeyDown, handleKeyUp]);
 
   const currentMapData = MAPS[gameState.currentMap];
   const closeDialogue = createCloseDialogue(setGameState);
@@ -43,6 +29,7 @@ function App() {
             setGameState={setGameState}
             createArt={createArt}
             closeDialogue={closeDialogue}
+            performBattleAction={performBattleAction}
           />
         </div>
       </div>

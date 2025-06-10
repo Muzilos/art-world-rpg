@@ -1,22 +1,16 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import type { GameState, MenuType } from '../types/game';
-import { checkInteraction, handleInteraction, updatePlayerPosition } from '../utils/gameLogic';
+import type { GameState, MenuType, BattleState } from '../types/game';
+import { handleInteraction, updatePlayerPosition } from '../utils/gameLogic';
 import { aStar } from '../utils/pathfinding';
 import { MAPS } from '../constants/maps';
 import { useQuests } from './useQuests';
 import {
   calculateArtworkValue,
   updateMarketConditions,
-  updateInventoryValues,
-  type MarketConditions
-} from '../utils/marketLogic';
+  updateInventoryValues} from '../utils/marketLogic';
 import { checkForMarketNotifications } from '../utils/marketNotifications';
 import { createCloseDialogue } from '../logic/closeDialogueLogic';
 import { handleBattleAction } from '../logic/battleLogic'; // Import the new logic
-
-interface Keys {
-  [key: string]: boolean;
-}
 
 // Add marketConditions to INITIAL_STATE
 const INITIAL_STATE: GameState = {
@@ -64,14 +58,13 @@ const INITIAL_STATE: GameState = {
   marketMultiplier: 1.0,
   gameTick: 0,
   pendingInteraction: null,
-  marketConditions: null // Add this new field
+  marketConditions: null
 };
 
 export const useGame = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
   const { checkQuests } = useQuests(setGameState);
   const currentMap = MAPS[gameState.currentMap];
-  const keysRef = useRef<Keys>({});
   const closeDialogue = createCloseDialogue(setGameState);
 
   // Add menuData to state for passing data to menus
@@ -199,8 +192,7 @@ export const useGame = () => {
         }
       }
     }
-    
-  }, [mapData, gameState.player]);
+  }, [mapData, gameState.player, gameState.pendingInteraction]);
 
   // Update createArt function to use market values
   const createArt = useCallback((artType: string) => {
@@ -256,7 +248,6 @@ export const useGame = () => {
       const quality = Math.min(10, Math.max(1, Math.random() * 5 + baseQuality));
       const isMasterpiece = quality >= 8.5;
 
-      // Calculate market value based on quality and market conditions
       const marketConditions = updateMarketConditions(prev.marketConditions, prev.gameTick);
       const artworkValue = calculateArtworkValue(
         artKey as 'paintings' | 'sculptures' | 'digitalArt',
@@ -311,27 +302,34 @@ export const useGame = () => {
       };
     });
   }, [closeDialogue]);
+  
+  const performBattleAction = useCallback((actionId: string) => {
+    setGameState(currentState => {
+      // Pass the current state to the battle logic handler
+      const nextState = handleBattleAction(actionId, currentState);
+
+      // If the battle ended, the dialogue's action needs to be hooked up to close it.
+      if (nextState.dialogue && nextState.battle === null) {
+        nextState.dialogue.options[0].action = () => setGameState(s => ({...s, dialogue: null}));
+      }
+
+      return nextState;
+    });
+  }, [setGameState]);
 
   // Update the main game loop
   useEffect(() => {
     const renderLoop = setInterval(() => {
-      setGameState(prev => {
-        const keys = keysRef.current;
-        const { currentMap, dialogue, battle, gameTick } = { ...prev };
+      setGameState((prev: GameState) => {
+        const { dialogue, battle, gameTick } = { ...prev };
         let { player, menu } = { ...prev };
-        const { time, day } = { ...prev };
 
-        // Store previous market conditions for comparison
         const previousMarketConditions = prev.marketConditions;
-        
-        // Update market conditions
         const marketConditions = updateMarketConditions(prev.marketConditions, gameTick);
         
-        // Check for market notifications (only when market actually changes)
         if (gameTick % 500 === 0 && previousMarketConditions && marketConditions !== previousMarketConditions) {
           const notifications = checkForMarketNotifications(previousMarketConditions, marketConditions, player);
           
-          // Show most important notification as dialogue
           if (notifications.length > 0 && !dialogue && !menu && !battle) {
             const priorityNotification = notifications.find(n => n.type === 'market_boom' || n.type === 'market_crash') || notifications[0];
             
@@ -349,22 +347,19 @@ export const useGame = () => {
           }
         }
         
-        // Update inventory values every 100 ticks (every 5 seconds)
         if (gameTick % 100 === 0) {
           player = updateInventoryValues(player, marketConditions);
         }
 
         if (dialogue || menu || battle) {
           player.sprite = 0;
-          return { ...prev, player, marketConditions };
+          return { ...prev, player, marketConditions, gameTick: gameTick + 1 };
         }
 
-        // Handle movement
         if (player.path && player.path.length > 0) {
-          player = updatePlayerPosition(player, keys['shift'] || false);
+          player = updatePlayerPosition(player, false); // No sprinting
         }
 
-        // Handle pending interactions
         if (prev.pendingInteraction) {
           const playerTileX = Math.floor(player.x / 32);
           const playerTileY = Math.floor(player.y / 32);
@@ -401,8 +396,8 @@ export const useGame = () => {
                     ...prev,
                     player,
                     battle: {
-                      ...result.data,
-                      player: { hp: 100, maxHp: 100 },
+                      ...(result.data as BattleState), // Assuming data is a valid BattleState partial
+                      player: { hp: 100, maxHp: 100, energy: player.energy },
                       turn: 'player',
                       log: []
                     },
@@ -425,81 +420,11 @@ export const useGame = () => {
             }
           }
         }
+        
+        player.sprite = 0;
 
-        // Handle keyboard movement
-        let dx = 0, dy = 0;
-        const moveSpeed = keys['shift'] ? 4 : 2;
-
-        const up = keys['w'] || keys['arrowup'];
-        const down = keys['s'] || keys['arrowdown'];
-        const left = keys['a'] || keys['arrowleft'];
-        const right = keys['d'] || keys['arrowright'];
-
-        if (up && left) {
-          dx = -moveSpeed / Math.SQRT2;
-          dy = -moveSpeed / Math.SQRT2;
-          player.facing = 'up';
-        } else if (up && right) {
-          dx = moveSpeed / Math.SQRT2;
-          dy = -moveSpeed / Math.SQRT2;
-          player.facing = 'up';
-        } else if (down && left) {
-          dx = -moveSpeed / Math.SQRT2;
-          dy = moveSpeed / Math.SQRT2;
-          player.facing = 'down';
-        } else if (down && right) {
-          dx = moveSpeed / Math.SQRT2;
-          dy = moveSpeed / Math.SQRT2;
-          player.facing = 'down';
-        } else if (up) {
-          dy = -moveSpeed;
-          player.facing = 'up';
-        } else if (down) {
-          dy = moveSpeed;
-          player.facing = 'down';
-        } else if (left) {
-          dx = -moveSpeed;
-          player.facing = 'left';
-        } else if (right) {
-          dx = moveSpeed;
-          player.facing = 'right';
-        }
-
-        if (dx !== 0 || dy !== 0) {
-          const targetX = player.x + dx;
-          const targetY = player.y + dy;
-          const tileX = Math.floor(targetX / 32);
-          const tileY = Math.floor(targetY / 32);
-
-          if (
-            tileX >= 0 && tileX < mapData.width &&
-            tileY >= 0 && tileY < mapData.height &&
-            !mapData.collision[tileY][tileX]
-          ) {
-            player.x = targetX;
-            player.y = targetY;
-            player.sprite = Math.floor(gameTick / 5) % 2;
-          }
-        } else {
-          player.sprite = 0;
-        }
-
-        // Clamp player position
         player.x = Math.max(0, Math.min(player.x, mapData.width * 32 - 32));
         player.y = Math.max(0, Math.min(player.y, mapData.height * 32 - 32));
-
-        // Interaction Check
-        if (keys[' '] || keys['enter']) {
-          const interaction = checkInteraction(player, mapData);
-          if (interaction) {
-            const result = handleInteraction(interaction.type, interaction.data, player, mapData);
-            if (result) {
-              menu = result.menu as MenuType;
-              setMenuData(result.data);
-              return { ...prev, player, menu, marketConditions, gameTick: gameTick + 1 };
-            }
-          }
-        }
 
         return { ...prev, player, menu, marketConditions, gameTick: gameTick + 1 };
       });
@@ -510,7 +435,6 @@ export const useGame = () => {
     };
   }, [mapData, closeDialogue]);
 
-  // Check quests whenever relevant game state changes
   useEffect(() => {
     checkQuests(gameState);
   }, [gameState.player.money, gameState.player.reputation, gameState.player.achievements, gameState.player.relationships, gameState.unlockedMaps, gameState.player.quests, gameState.player.completedQuests, checkQuests, gameState]);
@@ -521,6 +445,7 @@ export const useGame = () => {
     handleCanvasClick,
     setGameState,
     createArt,
-    closeDialogue
+    closeDialogue,
+    performBattleAction
   };
 };

@@ -2,7 +2,7 @@
 import type { GameState } from '../types/game';
 
 export const createCloseDialogue = (
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>
+  setGameState: (updater: (prev: GameState) => GameState) => void
 ) => {
   return () => {
     setGameState(prev => ({

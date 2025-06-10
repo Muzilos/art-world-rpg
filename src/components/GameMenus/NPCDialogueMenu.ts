@@ -1,24 +1,16 @@
 // components/GameMenus/NPCDialogueMenu.ts
-import type { BaseMenuProps, GameState, Player } from '../../types/game';
+import type { BaseMenuProps, GameState } from '../../types/game';
 import type { NPCData } from '../../types/game';
-import { getNPCDialogue, type NPCDialogue } from '../../logic/npcDialogueLogic';
+import { getNPCDialogue } from '../../logic/npcDialogueLogic';
 
 interface NPCDialogueMenuProps extends BaseMenuProps {
   setGameState: (updater: (prev: GameState) => GameState) => void;
-  getNPCDialogue: (npcData: NPCData, player: Player, relationshipLevel: number, actions: {
-    setGameState: (updater: (prev: GameState) => GameState) => void;
-    showMessage: (title: string, text: string, options?: DialogueOption[]) => void;
-    network: () => void;
-    openSellArtMenu: () => void;
-    startCritiqueBattle: () => void;
-  }) => NPCDialogue;
 }
 
 export const NPCDialogueMenu = ({
   currentY,
   gameState,
   setGameState,
-  getNPCDialogue,
   drawMenuButtonHelper,
   drawMenuTextHelper,
   drawMenuTitleHelper,
