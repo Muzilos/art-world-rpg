@@ -1,4 +1,4 @@
-export const GameUI = () => {
+export const GameUI: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 select-none font-sans">
       <div className="w-full max-w-lg md:max-w-xl lg:max-w-2xl">

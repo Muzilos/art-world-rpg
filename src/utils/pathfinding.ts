@@ -9,91 +9,101 @@ interface Node {
   parent: Node | null;
 }
 
-export const aStar = (start: { x: number; y: number }, end: { x: number; y: number }, grid: number[][]): { x: number; y: number }[] => {
-  const openSet: Node[] = [];
-  const closedSet: Set<string> = new Set();
-  
-  const startNode: Node = {
+export const aStar = (start: { x: number; y: number }, end: { x: number; y: number }, map: number[][]) => {
+  const getNeighbors = (node: Node): Node[] => {
+    const neighbors: Node[] = [];
+    const directions = [
+      { x: 0, y: -1 }, // up
+      { x: 1, y: 0 },  // right
+      { x: 0, y: 1 },  // down
+      { x: -1, y: 0 }  // left
+    ];
+
+    for (const dir of directions) {
+      const newX = node.x + dir.x;
+      const newY = node.y + dir.y;
+
+      // Check if the new position is within bounds and walkable
+      if (
+        newX >= 0 && newX < map[0].length &&
+        newY >= 0 && newY < map.length &&
+        map[newY][newX] !== 1 // Assuming 1 is a wall
+      ) {
+        neighbors.push({
+          x: newX,
+          y: newY,
+          g: 0,
+          h: 0,
+          f: 0,
+          parent: null
+        });
+      }
+    }
+
+    return neighbors;
+  };
+
+  const calculateHeuristic = (node: Node, end: { x: number; y: number }) => {
+    return Math.abs(node.x - end.x) + Math.abs(node.y - end.y);
+  };
+
+  const openSet: Node[] = [{
     x: start.x,
     y: start.y,
     g: 0,
-    h: 0,
+    h: calculateHeuristic({ x: start.x, y: start.y, g: 0, h: 0, f: 0, parent: null }, end),
     f: 0,
     parent: null
-  };
-  
-  openSet.push(startNode);
-  
-  const directions = [
-    { x: 1, y: 0 },   // right
-    { x: -1, y: 0 },  // left
-    { x: 0, y: 1 },   // down
-    { x: 0, y: -1 },  // up
-    { x: 1, y: 1 },   // down-right
-    { x: 1, y: -1 },  // up-right
-    { x: -1, y: 1 },  // down-left
-    { x: -1, y: -1 }  // up-left
-  ];
+  }];
+  const closedSet: Node[] = [];
 
   while (openSet.length > 0) {
+    // Find node with lowest f score
     let currentIndex = 0;
     for (let i = 0; i < openSet.length; i++) {
       if (openSet[i].f < openSet[currentIndex].f) {
         currentIndex = i;
       }
     }
-    
-    const currentNode = openSet[currentIndex];
-    
-    if (currentNode.x === end.x && currentNode.y === end.y) {
+
+    const current = openSet[currentIndex];
+
+    // Check if we've reached the end
+    if (current.x === end.x && current.y === end.y) {
       const path: { x: number; y: number }[] = [];
-      let current: Node | null = currentNode;
-      while (current) {
-        path.unshift({ x: current.x, y: current.y });
-        current = current.parent;
+      let temp = current;
+      while (temp.parent) {
+        path.push({ x: temp.x, y: temp.y });
+        temp = temp.parent;
       }
-      return path;
+      return path.reverse();
     }
-    
+
+    // Remove current from openSet and add to closedSet
     openSet.splice(currentIndex, 1);
-    closedSet.add(`${currentNode.x},${currentNode.y}`);
-    
-    for (const dir of directions) {
-      const neighbor = { x: currentNode.x + dir.x, y: currentNode.y + dir.y };
-      // Skip if out of bounds or wall
-      if (
-        neighbor.x < 0 || neighbor.x >= grid[0].length ||
-        neighbor.y < 0 || neighbor.y >= grid.length ||
-        grid[neighbor.y][neighbor.x] === 1
-      ) {
+    closedSet.push(current);
+
+    // Check neighbors
+    const neighbors = getNeighbors(current);
+    for (const neighbor of neighbors) {
+      if (closedSet.some(node => node.x === neighbor.x && node.y === neighbor.y)) {
         continue;
       }
-      // Prevent diagonal movement through corners
-      if (Math.abs(dir.x) === 1 && Math.abs(dir.y) === 1) {
-        const n1 = grid[currentNode.y][currentNode.x + dir.x];
-        const n2 = grid[currentNode.y + dir.y][currentNode.x];
-        if (n1 === 1 || n2 === 1) continue;
-      }
-      if (closedSet.has(`${neighbor.x},${neighbor.y}`)) {
+
+      const tentativeG = current.g + 1;
+
+      if (!openSet.some(node => node.x === neighbor.x && node.y === neighbor.y)) {
+        openSet.push(neighbor);
+      } else if (tentativeG >= neighbor.g) {
         continue;
       }
-      const gScore = currentNode.g + (Math.abs(dir.x) === 1 && Math.abs(dir.y) === 1 ? 1.414 : 1);
-      const hScore = Math.abs(neighbor.x - end.x) + Math.abs(neighbor.y - end.y);
-      const fScore = gScore + hScore;
-      const neighborNode: Node = {
-        x: neighbor.x,
-        y: neighbor.y,
-        g: gScore,
-        h: hScore,
-        f: fScore,
-        parent: currentNode
-      };
-      const existingNode = openSet.find(n => n.x === neighbor.x && n.y === neighbor.y);
-      if (existingNode && existingNode.g <= gScore) {
-        continue;
-      }
-      openSet.push(neighborNode);
+
+      neighbor.parent = current;
+      neighbor.g = tentativeG;
+      neighbor.h = calculateHeuristic(neighbor, end);
+      neighbor.f = neighbor.g + neighbor.h;
     }
   }
+
   return []; // No path found
 }; 

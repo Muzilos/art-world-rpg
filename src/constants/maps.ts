@@ -94,17 +94,37 @@ export const MAPS: Maps = {
       '10,5': {
         type: 'npc_artist',
         name: 'Jackson Park',
-        interaction: 'talk_npc'
+        interaction: 'teach_artist'
       },
       '6,10': {
         type: 'npc_critic',
         name: 'Eleanor Sharp',
-        interaction: 'talk_npc'
+        interaction: 'battle_critic'
       },
       '15,7': {
         type: 'npc_gallerist',
         name: 'Marcus Chen',
-        interaction: 'talk_npc'
+        interaction: 'judge_gallerist'
+      },
+      '12,8': {
+        type: 'npc_influencer',
+        name: 'Luna Vega',
+        interaction: 'talk_influencer'
+      },
+      '8,12': {
+        type: 'npc_dealer',
+        name: 'Rico Martinez',
+        interaction: 'talk_dealer'
+      },
+      '4,8': {
+        type: 'npc_historian',
+        name: 'Dr. Elizabeth Black',
+        interaction: 'talk_historian'
+      },
+      '16,12': {
+        type: 'npc_curator',
+        name: 'Sophia Chen',
+        interaction: 'talk_curator'
       },
       '5,15': {
         type: 'gallery_door',
@@ -208,12 +228,12 @@ export const MAPS: Maps = {
       '14,3': {
         type: 'coffee_shop',
         name: 'Grindhouse Coffee',
-        interaction: 'enter_coffee_shop'
+        interaction: 'buy_coffee'
       },
       '4,3': {
         type: 'street_vendor',
         name: 'Street Art Supplies',
-        interaction: 'shop_street_supplies'
+        interaction: 'buy_supplies'
       },
       '14,9': {
         type: 'thrift_store',
@@ -287,7 +307,7 @@ export const MAPS: Maps = {
       '12,3': {
         type: 'art_supply_pro',
         name: 'Pro Art Supplies',
-        interaction: 'shop_pro_supplies'
+        interaction: 'buy_supplies'
       },
       '3,9': {
         type: 'fashion_boutique',

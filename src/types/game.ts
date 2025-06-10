@@ -17,14 +17,14 @@ export interface Player {
   level: number;
   exp: number;
   title: string;
-  inventory: InventoryItem[];
+  inventory: Record<string, InventoryItem>;
   skills: Record<string, number>;
   equipment: {
     brush: string;
     outfit: string;
   };
   relationships: { [key: string]: number };
-  quests: Quest[];
+  quests: string[];
   completedQuests: string[];
   achievements: string[];
 }
@@ -33,20 +33,25 @@ export interface InventoryItem {
   id: string;
   name: string;
   type: 'art' | 'equipment' | 'consumable';
-  value: number;
+  value?: number;
   description: string;
+  quantity: number;
 }
 
 export interface Quest {
   id: string;
-  title: string;
+  name: string;
   description: string;
+  checkComplete: (gameState: GameState) => boolean;
   reward: {
-    money: number;
-    reputation: number;
-    items?: InventoryItem[];
+    exp?: number;
+    money?: number;
+    reputation?: number;
+    item?: {
+      [key: string]: number;
+    };
   };
-  completed: boolean;
+  unlocksQuests?: string[];
 }
 
 export interface DialogueNode {
@@ -59,17 +64,16 @@ export interface DialogueNode {
 }
 
 export interface ObjectData {
-  sprite: string;
-  interaction: string;
+  type: string;
   name: string;
+  interaction: string;
   x: number;
   y: number;
-  targetMap?: string;
-  targetPosition?: { x: number; y: number };
-  npcId?: string;
-  dialogueTree?: Record<string, DialogueNode>;
-  inventory?: InventoryItem[];
-  prices?: Record<string, number>;
+  data?: {
+    type: string;
+    name: string;
+    interaction: string;
+  };
 }
 
 export interface InteractionData {
@@ -81,21 +85,31 @@ export interface InteractionData {
 
 export interface MapObject {
   id: string;
-  type: 'npc' | 'collector' | 'critic' | 'shop' | 'quest';
+  type: string;
   x: number;
   y: number;
-  data: ObjectData;
+  data: {
+    sprite: string;
+    interaction: string;
+    name: string;
+    x: number;
+    y: number;
+  };
 }
 
 export interface GameMap {
-  id: string;
   name: string;
   width: number;
   height: number;
   bgm: string;
-  collision: boolean[][];
   tiles: number[][];
-  objects: MapObject[];
+  objects: {
+    [key: string]: {
+      type: string;
+      interaction: string;
+      name: string;
+    };
+  };
   exits?: {
     [key: string]: {
       to: string;
@@ -103,21 +117,27 @@ export interface GameMap {
       y: number;
     };
   };
+  locked?: boolean;
+  unlockReq?: {
+    reputation?: number;
+    money?: number;
+  };
 }
 
 export interface BattleState {
-  type: string;
+  type: 'critic' | 'gallerist';
+  player: {
+    hp: number;
+    maxHp: number;
+    energy: number;
+  };
   opponent: {
     name: string;
     hp: number;
     maxHp: number;
     type: string;
   };
-  player: {
-    hp: number;
-    maxHp: number;
-  };
-  turn: string;
+  turn: number;
   log: string[];
 }
 
@@ -141,6 +161,16 @@ export type MenuType =
   | 'study' 
   | 'dialogue' 
   | 'exit' 
+  | 'teach_artist'
+  | 'judge_gallerist'
+  | 'battle'
+  | 'buy_coffee'
+  | 'buy_supplies'
+  | 'influencer'
+  | 'dealer'
+  | 'historian'
+  | 'curator'
+  | 'shop'
   | null;
 
 export interface GameState {
@@ -150,6 +180,7 @@ export interface GameState {
   time: number;
   weather: string;
   menu: MenuType;
+  menuData?: NPCData | Record<string, unknown>;
   dialogue: DialogueState | null;
   battle: BattleState | null;
   music: boolean;
@@ -157,7 +188,7 @@ export interface GameState {
   unlockedMaps: string[];
   marketMultiplier: number;
   gameTick: number;
-  pendingInteraction: InteractionData | null;
+  pendingInteraction: PendingInteraction | null;
 }
 
 export interface QuestDefinition {
@@ -200,4 +231,40 @@ export interface SpriteData {
     right: string[];
   };
   [key: string]: string | { [key: string]: string[] };
+}
+
+export interface NPCOption {
+  text: string;
+  cost: number;
+  reward: {
+    reputation?: number;
+    exp?: number;
+    money?: number;
+    artistic?: number;
+    networking?: number;
+    business?: number;
+    curating?: number;
+  };
+}
+
+export interface NPCData {
+  name: string;
+  type?: string;
+  dialogue?: string;
+  options?: NPCOption[];
+  reputationChange?: number;
+  sale?: {
+    id: string;
+    name: string;
+    type: 'art' | 'equipment' | 'consumable';
+    description: string;
+    price: number;
+  };
+}
+
+export interface PendingInteraction {
+  x: number;
+  y: number;
+  type: string;
+  data: ObjectData;
 } 

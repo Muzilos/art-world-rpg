@@ -1,3 +1,5 @@
+import type { GameState, MenuType, ObjectData, Player, GameMap, NPCData } from '../types/game';
+
 // Helper Functions
 export const getWrappedLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, font: string) => {
   const words = text.split(' ');
@@ -61,101 +63,23 @@ export const wrapAndDrawText = (
   return lines.length * lineHeight;
 };
 
-export const aStar = (start: { x: number; y: number }, end: { x: number; y: number }, map: any) => {
-  const openSet = new Set([start]);
-  const closedSet = new Set();
-  const cameFrom = new Map();
-  const gScore = new Map([[start, 0]]);
-  const fScore = new Map([[start, heuristic(start, end)]]);
-
-  const getNeighbors = (node: { x: number; y: number }) => {
-    const neighbors = [];
-    const directions = [
-      { x: 0, y: -1 }, // up
-      { x: 1, y: 0 },  // right
-      { x: 0, y: 1 },  // down
-      { x: -1, y: 0 }  // left
-    ];
-
-    for (const dir of directions) {
-      const newX = node.x + dir.x;
-      const newY = node.y + dir.y;
-      
-      if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height) {
-        if (!map.collision[newY][newX]) {
-          neighbors.push({ x: newX, y: newY });
-        }
-      }
-    }
-    return neighbors;
-  };
-
-  while (openSet.size > 0) {
-    let current = null;
-    let lowestFScore = Infinity;
-
-    for (const node of openSet) {
-      const score = fScore.get(node) || Infinity;
-      if (score < lowestFScore) {
-        lowestFScore = score;
-        current = node;
-      }
-    }
-
-    if (!current) break;
-
-    if (current.x === end.x && current.y === end.y) {
-      return reconstructPath(cameFrom, current);
-    }
-
-    openSet.delete(current);
-    closedSet.add(current);
-
-    for (const neighbor of getNeighbors(current)) {
-      if (closedSet.has(neighbor)) continue;
-
-      const tentativeGScore = (gScore.get(current) || Infinity) + 1;
-
-      if (!openSet.has(neighbor)) {
-        openSet.add(neighbor);
-      } else if (tentativeGScore >= (gScore.get(neighbor) || Infinity)) {
-        continue;
-      }
-
-      cameFrom.set(neighbor, current);
-      gScore.set(neighbor, tentativeGScore);
-      fScore.set(neighbor, tentativeGScore + heuristic(neighbor, end));
-    }
-  }
-
-  return null;
-};
-
-const heuristic = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-};
-
-const reconstructPath = (cameFrom: Map<any, any>, current: any) => {
-  const path = [current];
-  while (cameFrom.has(current)) {
-    current = cameFrom.get(current);
-    path.unshift(current);
-  }
-  return path;
-};
-
 // Game Logic Functions
-import type { GameMap, MapObject, Player, ObjectData } from '../types/game';
-
-export const checkInteraction = (player: Player, currentMap: GameMap): MapObject | null => {
+export const checkInteraction = (player: Player, currentMap: GameMap): ObjectData | null => {
   const playerTileX = Math.floor(player.x / 32);
   const playerTileY = Math.floor(player.y / 32);
 
   // Check all objects within a 1-tile radius
-  for (const obj of currentMap.objects) {
-    const [objX, objY] = obj.id.split(',').map(Number);
+  for (const [key, obj] of Object.entries(currentMap.objects)) {
+    const [objX, objY] = key.split(',').map(Number);
     if (Math.abs(objX - playerTileX) <= 1 && Math.abs(objY - playerTileY) <= 1) {
-      return obj;
+      return {
+        sprite: obj.type,
+        interaction: obj.interaction,
+        name: obj.name,
+        type: obj.type,
+        x: objX * 32,
+        y: objY * 32
+      };
     }
   }
   return null;
@@ -163,16 +87,15 @@ export const checkInteraction = (player: Player, currentMap: GameMap): MapObject
 
 export const handleMapTransition = (player: Player, currentMap: GameMap, targetMap: string): { player: Player; map: string } => {
   // Find the door object that triggered the transition
-  const door = currentMap.objects.find(obj => {
-    if (obj.data.interaction !== 'exit') return false;
+  const door = Object.entries(currentMap.objects).find(([key, obj]) => {
+    if (obj.interaction !== 'exit') return false;
     
     // Get player's tile position
     const playerTileX = Math.floor(player.x / 32);
     const playerTileY = Math.floor(player.y / 32);
     
     // Get door's tile position
-    const doorTileX = Math.floor(obj.x / 32);
-    const doorTileY = Math.floor(obj.y / 32);
+    const [doorTileX, doorTileY] = key.split(',').map(Number);
     
     // Check if player is adjacent to the door (including diagonals)
     const isAdjacent = Math.abs(playerTileX - doorTileX) <= 1 && Math.abs(playerTileY - doorTileY) <= 1;
@@ -181,86 +104,76 @@ export const handleMapTransition = (player: Player, currentMap: GameMap, targetM
   });
 
   if (!door) {
-    return { player, map: currentMap.id };
+    return { player, map: currentMap.name };
   }
 
   // Get the target position from the door's data
-  const targetPos = door.data.targetPosition || { x: 0, y: 0 };
+  const exitKey = door[0];
+  const exitData = currentMap.exits?.[exitKey];
+  if (!exitData) {
+    return { player, map: currentMap.name };
+  }
   
   // Update player position to the target position
   const updatedPlayer = {
     ...player,
-    x: targetPos.x,
-    y: targetPos.y,
+    x: exitData.x * 32,
+    y: exitData.y * 32,
     path: [], // Clear any existing path
   };
 
   return { player: updatedPlayer, map: targetMap };
 };
 
-export const handleInteraction = (interactionType: string, data: ObjectData, player: Player, currentMap: GameMap): { menu: string; data?: any; mapTransition?: { map: string; position: { x: number; y: number } } } | null => {
-  switch (interactionType) {
-    case 'create_art':
+export const handleInteraction = (interactionType: string, data: ObjectData, player: Player, currentMap: GameMap): { menu: MenuType; data?: NPCData | Record<string, unknown>; mapTransition?: { map: string; position: { x: number; y: number } } } | null => {
+  // Handle map transitions
+  if (interactionType === 'exit') {
+    const exitKey = `${Math.floor(data.x / 32)},${Math.floor(data.y / 32)}`;
+    const exitData = currentMap.exits?.[exitKey];
+    if (exitData) {
       return { 
-        menu: 'create_art',
+        menu: 'exit',
         data: {
-          energy: player.energy,
-          skills: player.skills
+          targetMap: exitData.to,
+          targetPosition: { x: exitData.x * 32, y: exitData.y * 32 }
+        } as Record<string, unknown>,
+        mapTransition: {
+          map: exitData.to,
+          position: { x: exitData.x * 32, y: exitData.y * 32 }
         }
       };
-    case 'rest':
-      return { 
-        menu: 'rest',
-        data: {
-          energy: player.energy,
-          cost: 10 // Cost to rest
-        }
-      };
-    case 'study':
-      return { 
-        menu: 'study',
-        data: {
-          energy: player.energy,
-          skills: player.skills
-        }
-      };
-    case 'exit':
-      // Get the exit data from the map using the object's position
-      const exitKey = `${Math.floor(data.x / 32)},${Math.floor(data.y / 32)}`;
-      const exitData = currentMap.exits?.[exitKey];
-      if (exitData) {
-        return { 
-          menu: 'exit',
-          data: {
-            targetMap: exitData.to,
-            targetPosition: { x: exitData.x * 32, y: exitData.y * 32 }
-          },
-          mapTransition: {
-            map: exitData.to,
-            position: { x: exitData.x * 32, y: exitData.y * 32 }
-          }
-        };
-      }
-      return null;
-    case 'npc':
-      return { 
-        menu: 'dialogue',
-        data: {
-          npcId: data.npcId,
-          dialogueTree: data.dialogueTree
-        }
-      };
-    case 'shop':
-      return { 
-        menu: 'market',
-        data: {
-          inventory: data.inventory,
-          prices: data.prices
-        }
-      };
-    default:
-      return null;
+    }
+    return null;
   }
+
+  // Handle NPC interactions
+  if (interactionType === 'talk_npc') {
+    return {
+      menu: 'talk_npc',
+      data: {
+        type: data.type,
+        name: data.name,
+        x: data.x,
+        y: data.y,
+        interaction: data.interaction
+      } as NPCData
+    };
+  }
+
+  // Handle shop interactions
+  if (interactionType === 'shop') {
+    return {
+      menu: 'shop',
+      data: {
+        name: data.name,
+        description: "Welcome to the shop! What would you like to buy?",
+        reputationChange: 0,
+        sale: null
+      }
+    };
+  }
+
+  return null;
 };
 
 export const updatePlayerPosition = (player: Player, isSprinting: boolean): Player => {
@@ -303,6 +216,46 @@ export const updatePlayerPosition = (player: Player, isSprinting: boolean): Play
   }
 
   return player;
+};
+
+export const handleShopTransaction = (
+  itemName: string,
+  itemKey: string,
+  price: number,
+  amount: number,
+  setGameState: (updater: (prev: GameState) => GameState) => void,
+  closeDialogue: () => void
+) => {
+  setGameState(prev => {
+    const newState = { ...prev };
+    if (newState.player.money >= price * amount) {
+      newState.player.money -= price * amount;
+      if (!newState.player.inventory[itemKey]) {
+        newState.player.inventory[itemKey] = {
+          id: itemKey,
+          name: itemName,
+          type: 'consumable',
+          value: 1,
+          description: 'A consumable item.',
+          quantity: amount
+        };
+      } else {
+        newState.player.inventory[itemKey].quantity += amount;
+      }
+      newState.dialogue = {
+        title: "Purchase Successful!",
+        text: `You bought ${amount}x ${itemName} for $${price * amount}.`,
+        options: [{ text: "Great!", action: closeDialogue }]
+      };
+    } else {
+      newState.dialogue = {
+        title: "Not Enough Money",
+        text: `You need $${price * amount} to buy ${amount}x ${itemName}.`,
+        options: [{ text: "Okay", action: closeDialogue }]
+      };
+    }
+    return newState;
+  });
 };
 
 // Add more game logic functions as needed... 
