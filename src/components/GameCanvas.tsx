@@ -6,6 +6,15 @@ import { BATTLE_ACTIONS } from '../constants/game';
 import { QUEST_DEFINITIONS } from '../quests/questDefinitions';
 import { MAPS } from '../constants/maps';
 import { getMarketSummary, calculateArtworkValue, generateMarketAnalysis } from '../utils/marketLogic';
+import { InventoryMenu } from './GameMenus/InventoryMenu';
+import { QuestMenu } from './GameMenus/QuestMenu';
+import { CreateArtMenu } from './GameMenus/CreateArtMenu';
+import { RestMenu } from './GameMenus/RestMenu';
+import { StudyMenu } from './GameMenus/StudyMenu';
+import { BattleMenu } from './GameMenus/BattleMenu';
+import { ArtSuppliesMenu } from './GameMenus/ArtSuppliesMenu';
+import { CoffeeShopMenu } from './GameMenus/CoffeeShopMenu';
+import { NPCDialogueMenu } from './GameMenus/NpcDialogueMenu';
 
 const TILE_SIZE = 32;
 
@@ -15,13 +24,13 @@ interface GameCanvasProps {
   onCanvasClick: (x: number, y: number, menu?: MenuType) => void;
   setGameState: (updater: (prev: GameState) => GameState) => void;
   createArt: (artType: string) => void;
-  closeDialogue: (func: () => void) => void;
+  closeDialogue: () => void;
 }
 
 // Helper types
 interface DialogueOption {
   text: string;
-  action: (func: () => void) => void;
+  action: () => void;
 }
 
 interface NPCDialogue {
@@ -82,10 +91,6 @@ export const GameCanvas = ({
     } else {
       console.error('Attempted to add clickable without valid action function');
     }
-  };
-
-  const closeMenu = () => {
-    onCanvasClick(-999, -999);
   };
 
   const showMessage = (
@@ -764,42 +769,6 @@ export const GameCanvas = ({
     }
   };
 
-  // Study menu handler
-  const handleStudyMenu = () => {
-    setGameState(prev => {
-      if (prev.player.energy < 20) {
-        return {
-          ...prev,
-          dialogue: {
-            title: "Too Tired",
-            text: "You need 20 energy to study.",
-            options: [{ text: "OK", action: closeDialogue }]
-          }
-        };
-      }
-
-      const skillGain = 0.5 + Math.random() * 0.5;
-      const randomSkill = ['artistic', 'networking', 'business', 'curating'][Math.floor(Math.random() * 4)] as keyof typeof prev.player.skills;
-
-      return {
-        ...prev,
-        player: {
-          ...prev.player,
-          energy: prev.player.energy - 20,
-          skills: {
-            ...prev.player.skills,
-            [randomSkill]: Math.min(10, prev.player.skills[randomSkill] + skillGain)
-          }
-        },
-        dialogue: {
-          title: "Study Complete!",
-          text: `You gained ${skillGain.toFixed(2)} ${randomSkill} skill!`,
-          options: [{ text: "Great!", action: closeDialogue }]
-        }
-      };
-    });
-  };
-
   // Drawing Functions
   const drawMenuButton = (
     ctx: CanvasRenderingContext2D,
@@ -842,7 +811,13 @@ export const GameCanvas = ({
     });
 
     if (!disabled) {
-      addClickable(x, y, width, height, action);
+      addClickable(
+        x,
+        y,
+        width,
+        height,
+        action,
+      );
     }
   };
 
@@ -896,298 +871,66 @@ export const GameCanvas = ({
     const drawMenuButtonHelper = (text: string, action: () => void, color = '#3B82F6', disabled = false) => {
       const btnWidth = boxWidth - padding * 2;
       const btnX = boxX + padding;
-      drawMenuButton(ctx, text, btnX, currentY, btnWidth, buttonHeight, action, color, disabled);
+      const buttonY = currentY; // <-- capture before using it
+      drawMenuButton(ctx, text, btnX, buttonY, btnWidth, buttonHeight, action, color, disabled);
       currentY += buttonHeight + buttonMargin;
+    };
+
+    const drawMenuTextHelper = (text: string, color?: string, size?: string, align?: CanvasTextAlign, isBold?: boolean) => {
+      drawMenuText(text, color, size, align, isBold);
+    };
+
+    const drawMenuTitleHelper = (title: string) => {
+      drawMenuTitle(title);
     };
 
     // Draw menu content based on type
     switch (gameState.menu) {
-
-      case 'inventory': {
-        drawMenuTitle('Inventory');
-        drawMenuText('Equipment:', '#A78BFA', '16px', 'left', true);
-        drawMenuText(`Brush: ${gameState.player.equipment.brush}`, '#CBD5E1');
-        drawMenuText(`Outfit: ${gameState.player.equipment.outfit}`, '#CBD5E1');
-        currentY += 10;
-        drawMenuText('Items:', '#A78BFA', '16px', 'left', true);
-
-        Object.entries(gameState.player.inventory).forEach(([itemId, item]) => {
-          let displayText = `${item.name} x${item.quantity}`;
-
-          // Show current market value for art pieces
-          if (item.type === 'art' && gameState.marketConditions) {
-            const artKey = itemId as 'paintings' | 'sculptures' | 'digitalArt';
-            const currentValue = calculateArtworkValue(artKey, gameState.player, gameState.marketConditions);
-            displayText += ` (Value: $${currentValue})`;
-          }
-
-          drawMenuText(displayText, '#CBD5E1');
-
-          if (item.type === 'consumable' && item.quantity > 0) {
-            drawMenuButtonHelper(`Use (${item.name})`, () => {
-              setGameState(prev => {
-                const newPlayer = { ...prev.player };
-                if (itemId === 'coffee') {
-                  newPlayer.energy = Math.min(100, newPlayer.energy + 30);
-                }
-                newPlayer.inventory = {
-                  ...newPlayer.inventory,
-                  [itemId]: { ...item, quantity: item.quantity - 1 }
-                };
-                return { ...prev, player: newPlayer };
-              });
-            });
-          }
+      case 'inventory':
+        currentY = InventoryMenu({
+          currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
         });
         break;
-      }
-
       case 'quests':
-        drawMenuTitle('Quests');
-        if (gameState.player.quests.length === 0) {
-          drawMenuText('No active quests', '#CBD5E1', '16px', 'center');
-        } else {
-          gameState.player.quests.forEach(questId => {
-            const quest = QUEST_DEFINITIONS[questId];
-            if (!quest) return;
-
-            const isCompleted = gameState.player.completedQuests.includes(questId);
-            const textColor = isCompleted ? '#9CA3AF' : '#CBD5E1';
-            const titleColor = isCompleted ? '#6B7280' : '#CBD5E1';
-
-            drawMenuText(quest.name, titleColor, '16px', 'left', true);
-            drawMenuText(quest.description, textColor, '14px', 'left', false);
-
-            if (quest.reward.money) {
-              drawMenuText(`Reward: $${quest.reward.money}`, textColor, '14px', 'left', false);
-            }
-            if (quest.reward.reputation) {
-              drawMenuText(`Rep: ${quest.reward.reputation}`, textColor, '14px', 'left', false);
-            }
-            if (quest.reward.exp) {
-              drawMenuText(`EXP: ${quest.reward.exp}`, textColor, '14px', 'left', false);
-            }
-
-            if (isCompleted) {
-              drawMenuText('✓ Completed', '#22C55E', '14px', 'left', true);
-            }
-          });
-        }
+        currentY = QuestMenu({
+          currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
+        });
         break;
-
       case 'create_art':
-        drawMenuTitle('Create Art');
-        drawMenuText(`Energy: ${gameState.player.energy}/100 | Artistic: ${gameState.player.skills.artistic.toFixed(1)}`, '#CBD5E1', '15px', 'center');
-        currentY += 30;
-        drawMenuButtonHelper('Paint (25 EGY, Skill 1+)', () => createArt('painting'), '#3B82F6');
-        drawMenuButtonHelper('Sculpt (40 EGY, Skill 3+)', () => createArt('sculpture'), '#22C55E', gameState.player.skills.artistic < 3);
-        drawMenuButtonHelper('Digital Art (20 EGY, Skill 5+)', () => createArt('digital'), '#8B5CF6', gameState.player.skills.artistic < 5);
+        currentY = CreateArtMenu({
+          currentY, gameState, setGameState, createArt, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
+        });
         break;
-
       case 'rest':
-        drawMenuTitle('Rest');
-        drawMenuText(`Time: ${gameState.time}:00, Day ${gameState.day} | Energy: ${gameState.player.energy}/100`, '#CBD5E1', '15px', 'center');
-        currentY += 30;
-        drawMenuButtonHelper('Nap (2 Hrs, +30 Energy)', () => {
-          let newTime = gameState.time + 2;
-          let newDay = gameState.day;
-          if (newTime >= 24) {
-            newTime = newTime % 24;
-            newDay += 1;
-          }
-          setGameState(prev => ({
-            ...prev,
-            time: newTime,
-            day: newDay,
-            player: {
-              ...prev.player,
-              energy: Math.min(100, prev.player.energy + 30)
-            }
-          }));
-        }, '#38BDF8');
-        drawMenuButtonHelper('Sleep (Until 8 AM, +100 Energy)', () => {
-          setGameState(prev => ({
-            ...prev,
-            time: 8,
-            day: prev.day + 1,
-            player: {
-              ...prev.player,
-              energy: 100
-            }
-          }));
-        }, gameState.time < 21 ? '#64748B' : '#3B82F6', gameState.time < 21);
-        break;
-
-      case 'talk_npc': {
-        const npcData = gameState.menuData as NPCData;
-        if (!npcData) return;
-
-        drawMenuTitle(npcData.name);
-        const player = gameState.player;
-        const relationshipLevel = player.relationships?.[npcData.name] || 0;
-        const dialogue = getNPCDialogue(npcData, player, relationshipLevel);
-
-        drawMenuText(dialogue.text, '#CBD5E1', '16px', 'left');
-        currentY += 20;
-        dialogue.options.forEach(option => {
-          drawMenuButtonHelper(option.text, option.action);
+        currentY = RestMenu({
+          currentY, gameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage, setGameState
         });
         break;
-      }
-
+      case 'study':
+        currentY = StudyMenu({
+          currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage,
+        });
+        break;
       case 'battle':
-        drawMenuTitle('Critic Battle');
-        const battle = gameState.battle;
-        if (!battle) return;
-
-        drawMenuText(`Opponent: ${battle.opponent.name} (${battle.opponent.hp}/${battle.opponent.maxHp} HP)`, '#F87171', '16px', 'center');
-        drawMenuText(`You: ${battle.player.hp}/${battle.player.maxHp} HP`, '#4ADE80', '16px', 'center');
-
-        battle.log.slice(-5).forEach((entry: string) => drawMenuText(entry, '#CBD5E1', '14px', 'left'));
-
-        if (battle.turn === 'player') {
-          BATTLE_ACTIONS.forEach(action => {
-            drawMenuButtonHelper(action.name, () => {
-              const hit = Math.random() < action.accuracy;
-              const newLog = [...battle.log];
-
-              if (hit) {
-                battle.opponent.hp -= action.power;
-                newLog.push(`You used ${action.name}! It hit for ${action.power} damage.`);
-              } else {
-                newLog.push(`You used ${action.name}, but missed!`);
-              }
-
-              if (battle.opponent.hp <= 0) {
-                newLog.push('You won the battle! Reputation +10');
-                setGameState(prev => ({
-                  ...prev,
-                  player: { ...prev.player, reputation: prev.player.reputation + 10 },
-                  battle: null,
-                  menu: null
-                }));
-                return;
-              }
-
-              setGameState(prev => ({
-                ...prev,
-                battle: { ...battle, log: newLog, turn: 'opponent' }
-              }));
-
-              setTimeout(() => {
-                const oppHit = Math.random() < 0.8;
-                const newLog2 = [...newLog];
-
-                if (oppHit) {
-                  battle.player.hp -= 15;
-                  newLog2.push('Critic attacks! You lose 15 HP.');
-                } else {
-                  newLog2.push('Critic attacks but misses!');
-                }
-
-                if (battle.player.hp <= 0) {
-                  newLog2.push('You lost the battle! Reputation -5');
-                  setGameState(prev => ({
-                    ...prev,
-                    player: { ...prev.player, reputation: Math.max(0, prev.player.reputation - 5) },
-                    battle: null,
-                    menu: null
-                  }));
-                  return;
-                }
-
-                setGameState(prev => ({
-                  ...prev,
-                  battle: { ...battle, log: newLog2, turn: 'player' }
-                }));
-              }, 1000);
-            });
-          });
-        } else {
-          drawMenuText('Opponent is thinking...', '#CBD5E1', '16px', 'center');
-        }
-        break;
-
-      case 'buy_coffee':
-        drawMenuTitle('Coffee Shop');
-        drawMenuText('Buy a coffee for $10? Restores 30 energy.', '#CBD5E1', '16px', 'center');
-        drawMenuButtonHelper('Buy Coffee ($10)', () => {
-          if (gameState.player.money >= 10) {
-            setGameState(prev => {
-              const inv = { ...prev.player.inventory };
-              if (inv.coffee) {
-                inv.coffee = {
-                  ...inv.coffee,
-                  quantity: inv.coffee.quantity + 1
-                };
-              } else {
-                inv.coffee = {
-                  id: 'coffee',
-                  name: 'Coffee',
-                  type: 'consumable',
-                  quantity: 1,
-                  description: 'Restores 30 energy.'
-                };
-              }
-              return {
-                ...prev,
-                player: {
-                  ...prev.player,
-                  money: prev.player.money - 10,
-                  inventory: inv
-                },
-                dialogue: {
-                  title: "Coffee!",
-                  text: "You bought an artisanal coffee.",
-                  options: [{
-                    text: "Nice!",
-                    action: () => {
-                      setGameState(p => ({ ...p, dialogue: null }));
-                    }
-                  }]
-                }
-              };
-            });
-          } else {
-            showMessage('Not enough money', 'You need $10 for coffee.');
-          }
+        currentY = BattleMenu({
+          currentY, gameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage, setGameState
         });
         break;
-
+      case 'talk_npc':
+        currentY = NPCDialogueMenu({
+          currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
+        });
+        break;
+      case 'buy_coffee':
+        currentY = CoffeeShopMenu({
+          currentY,
+          gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
+        });
+        break;
       case 'buy_supplies':
-        drawMenuTitle('Art Supplies');
-        drawMenuText('Buy art supplies for $25? Needed for creating art.', '#CBD5E1', '16px', 'center');
-        drawMenuButtonHelper('Buy Supplies ($25)', () => {
-          if (gameState.player.money >= 25) {
-            setGameState(prev => {
-              const inv = { ...prev.player.inventory };
-              if (inv.supplies) {
-                inv.supplies = {
-                  ...inv.supplies,
-                  quantity: inv.supplies.quantity + 1
-                };
-              } else {
-                inv.supplies = {
-                  id: 'supplies',
-                  name: 'Art Supplies',
-                  type: 'consumable',
-                  quantity: 1,
-                  description: 'Needed for creating art.'
-                };
-              }
-              return {
-                ...prev,
-                player: {
-                  ...prev.player,
-                  money: prev.player.money - 25,
-                  inventory: inv
-                },
-                menu: null
-              };
-            });
-          } else {
-            showMessage('Not enough money', 'You need $25 for supplies.');
-          }
+        currentY = ArtSuppliesMenu({
+          currentY,
+          gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage
         });
         break;
       case 'status':
@@ -1204,15 +947,6 @@ export const GameCanvas = ({
         drawMenuText(`Business: ${gameState.player.skills.business.toFixed(1)}`, '#CBD5E1');
         drawMenuText(`Curating: ${gameState.player.skills.curating.toFixed(1)}`, '#CBD5E1');
         break;
-      case 'study':
-        drawMenuTitle('Study');
-        drawMenuText(`Energy: ${gameState.player.energy}/100`, '#CBD5E1', '15px', 'center');
-        currentY += 20;
-        drawMenuText('Study to improve a random skill!', '#CBD5E1', '15px', 'center');
-        currentY += 20;
-        drawMenuButtonHelper('Study (20 Energy)', handleStudyMenu);
-        break;
-
       case 'teach_artist':
         drawMenuTitle('Master Artist');
         drawMenuText('Learn advanced techniques from a master artist.', '#CBD5E1', '15px', 'center');
@@ -1242,132 +976,136 @@ export const GameCanvas = ({
         break;
 
       case 'judge_gallerist':
-        drawMenuTitle('Gallerist Judgement');
-        const repChange = gameState.menuData?.reputationChange || 0;
-        const sale = gameState.menuData?.sale;
-        drawMenuText(
-          repChange > 0
-            ? `The gallerist is impressed! Reputation +${repChange}`
-            : `The gallerist is unimpressed. Reputation ${repChange}`,
-          '#CBD5E1',
-          '16px',
-          'center'
-        );
-        if (sale) {
-          drawMenuText(`You made a sale! +${sale.amount}`, '#4ADE80', '16px', 'center');
+        {
+          drawMenuTitle('Gallerist Judgement');
+          const repChange = gameState.menuData?.reputationChange || 0;
+          const sale = gameState.menuData?.sale;
+          drawMenuText(
+            repChange > 0
+              ? `The gallerist is impressed! Reputation +${repChange}`
+              : `The gallerist is unimpressed. Reputation ${repChange}`,
+            '#CBD5E1',
+            '16px',
+            'center'
+          );
+          if (sale) {
+            drawMenuText(`You made a sale! +${sale.amount}`, '#4ADE80', '16px', 'center');
+          }
+          drawMenuButtonHelper('Continue', () => {
+            setGameState(prev => ({
+              ...prev,
+              player: {
+                ...prev.player,
+                reputation: prev.player.reputation + repChange,
+                money: sale ? prev.player.money + sale.amount : prev.player.money
+              },
+              menu: null
+            }));
+          });
+          break;
         }
-        drawMenuButtonHelper('Continue', () => {
-          setGameState(prev => ({
-            ...prev,
-            player: {
-              ...prev.player,
-              reputation: prev.player.reputation + repChange,
-              money: sale ? prev.player.money + sale.amount : prev.player.money
-            },
-            menu: null
-          }));
-        });
-        break;
 
       case 'market':
-        drawMenuTitle('Art Market');
+        {
+          drawMenuTitle('Art Market');
 
-        // Display current market conditions
-        if (gameState.marketConditions) {
-          drawMenuText('Market Conditions:', '#A78BFA', '16px', 'left', true);
-          const marketSummary = getMarketSummary(gameState.marketConditions);
-          drawMenuText(marketSummary, '#CBD5E1', '14px', 'left');
-          currentY += 15;
-        }
+          // Display current market conditions
+          if (gameState.marketConditions) {
+            drawMenuText('Market Conditions:', '#A78BFA', '16px', 'left', true);
+            const marketSummary = getMarketSummary(gameState.marketConditions);
+            drawMenuText(marketSummary, '#CBD5E1', '14px', 'left');
+            currentY += 15;
+          }
 
-        drawMenuText('Your Artwork:', '#A78BFA', '16px', 'left', true);
+          drawMenuText('Your Artwork:', '#A78BFA', '16px', 'left', true);
 
-        // Show available artwork with current values
-        const artworks = Object.entries(gameState.player.inventory)
-          .filter(([_, item]) => item.type === 'art' && item.quantity > 0);
+          // Show available artwork with current values
+          const artworks = Object.entries(gameState.player.inventory)
+            .filter(([_, item]) => item.type === 'art' && item.quantity > 0);
 
-        if (artworks.length > 0) {
-          artworks.forEach(([key, item]) => {
-            const artKey = key as 'paintings' | 'sculptures' | 'digitalArt';
-            let currentValue = item.value || 0;
+          if (artworks.length > 0) {
+            artworks.forEach(([key, item]) => {
+              const artKey = key as 'paintings' | 'sculptures' | 'digitalArt';
+              let currentValue = item.value || 0;
 
-            // Recalculate current market value if market conditions exist
-            if (gameState.marketConditions) {
-              currentValue = calculateArtworkValue(artKey, gameState.player, gameState.marketConditions);
-            }
+              // Recalculate current market value if market conditions exist
+              if (gameState.marketConditions) {
+                currentValue = calculateArtworkValue(artKey, gameState.player, gameState.marketConditions);
+              }
 
-            const marketData = gameState.marketConditions?.[artKey];
-            const trendIcon = marketData ? {
-              rising: '📈',
-              stable: '➡️',
-              falling: '📉'
-            }[marketData.marketTrend] : '';
+              const marketData = gameState.marketConditions?.[artKey];
+              const trendIcon = marketData ? {
+                rising: '📈',
+                stable: '➡️',
+                falling: '📉'
+              }[marketData.marketTrend] : '';
 
-            const demandIcon = marketData ? {
-              low: '🔻',
-              medium: '🔸',
-              high: '🔥'
-            }[marketData.demandLevel] : '';
+              const demandIcon = marketData ? {
+                low: '🔻',
+                medium: '🔸',
+                high: '🔥'
+              }[marketData.demandLevel] : '';
 
-            drawMenuText(`${item.name} x${item.quantity}`, '#CBD5E1', '15px', 'left', true);
-            drawMenuText(`Value: $${currentValue} ${trendIcon} ${demandIcon}`, '#4ADE80', '14px', 'left');
+              drawMenuText(`${item.name} x${item.quantity}`, '#CBD5E1', '15px', 'left', true);
+              drawMenuText(`Value: $${currentValue} ${trendIcon} ${demandIcon}`, '#4ADE80', '14px', 'left');
 
-            // Add sell button for each artwork type
-            if (item.quantity > 0) {
-              drawMenuButtonHelper(`Sell ${item.name} ($${currentValue})`, () => {
-                setGameState(prev => {
-                  const newInventory = { ...prev.player.inventory };
-                  newInventory[key] = {
-                    ...newInventory[key],
-                    quantity: newInventory[key].quantity - 1
-                  };
+              // Add sell button for each artwork type
+              if (item.quantity > 0) {
+                drawMenuButtonHelper(`Sell ${item.name} ($${currentValue})`, () => {
+                  setGameState(prev => {
+                    const newInventory = { ...prev.player.inventory };
+                    newInventory[key] = {
+                      ...newInventory[key],
+                      quantity: newInventory[key].quantity - 1
+                    };
 
-                  // Remove from inventory if quantity reaches 0
-                  if (newInventory[key].quantity <= 0) {
-                    delete newInventory[key];
-                  }
-
-                  return {
-                    ...prev,
-                    player: {
-                      ...prev.player,
-                      money: prev.player.money + currentValue,
-                      reputation: prev.player.reputation + Math.floor(currentValue / 50),
-                      inventory: newInventory
-                    },
-                    dialogue: {
-                      title: "Artwork Sold!",
-                      text: `You sold your ${item.name} for $${currentValue}!\n+${Math.floor(currentValue / 50)} Reputation`,
-                      options: [{ text: "Excellent!", action: closeDialogue }]
+                    // Remove from inventory if quantity reaches 0
+                    if (newInventory[key].quantity <= 0) {
+                      delete newInventory[key];
                     }
-                  };
-                });
-              }, '#22C55E');
+
+                    return {
+                      ...prev,
+                      player: {
+                        ...prev.player,
+                        money: prev.player.money + currentValue,
+                        reputation: prev.player.reputation + Math.floor(currentValue / 50),
+                        inventory: newInventory
+                      },
+                      dialogue: {
+                        title: "Artwork Sold!",
+                        text: `You sold your ${item.name} for $${currentValue}!\n+${Math.floor(currentValue / 50)} Reputation`,
+                        options: [{ text: "Excellent!", action: closeDialogue }]
+                      }
+                    };
+                  });
+                }, '#22C55E');
+              }
+            });
+          } else {
+            drawMenuText('No artwork to sell. Create some art first!', '#CBD5E1', '15px', 'center');
+          }
+
+          currentY += 20;
+
+          // Market analysis button
+          drawMenuButtonHelper('Market Analysis (Business Skill)', () => {
+            if (gameState.player.skills.business < 2) {
+              showMessage('Business Skill Too Low', 'You need at least level 2 Business skill for market analysis.');
+              return;
             }
-          });
-        } else {
-          drawMenuText('No artwork to sell. Create some art first!', '#CBD5E1', '15px', 'center');
+
+            if (!gameState.marketConditions) {
+              showMessage('No Market Data', 'Market conditions are not available.');
+              return;
+            }
+
+            const analysis = generateMarketAnalysis(gameState.player, gameState.marketConditions);
+            showMessage('Market Analysis', analysis);
+          }, '#8B5CF6', gameState.player.skills.business < 2);
+
+          break;
         }
-
-        currentY += 20;
-
-        // Market analysis button
-        drawMenuButtonHelper('Market Analysis (Business Skill)', () => {
-          if (gameState.player.skills.business < 2) {
-            showMessage('Business Skill Too Low', 'You need at least level 2 Business skill for market analysis.');
-            return;
-          }
-
-          if (!gameState.marketConditions) {
-            showMessage('No Market Data', 'Market conditions are not available.');
-            return;
-          }
-
-          const analysis = generateMarketAnalysis(gameState.player, gameState.marketConditions);
-          showMessage('Market Analysis', analysis);
-        }, '#8B5CF6', gameState.player.skills.business < 2);
-
-        break;
       case 'shop': {
         const shopData = gameState.menuData?.shop;
         if (shopData) {

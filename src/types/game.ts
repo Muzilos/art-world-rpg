@@ -1,5 +1,7 @@
 // types/game.ts - Updated to include market system
 
+import type { DialogueOption } from "../logic/npcDialogueLogic";
+
 export interface Position {
   x: number;
   y: number;
@@ -165,7 +167,7 @@ export interface BattleState {
     maxHp: number;
     type: string;
   };
-  turn: number;
+  turn: 'player' | 'opponent';
   log: string[];
 }
 
@@ -179,17 +181,17 @@ export interface DialogueState {
   scroll?: number;
 }
 
-export type MenuType = 
-  | 'status' 
-  | 'inventory' 
-  | 'quests' 
-  | 'market' 
-  | 'create_art' 
+export type MenuType =
+  | 'status'
+  | 'inventory'
+  | 'quests'
+  | 'market'
+  | 'create_art'
   | 'talk_npc'
-  | 'rest' 
-  | 'study' 
-  | 'dialogue' 
-  | 'exit' 
+  | 'rest'
+  | 'study'
+  | 'dialogue'
+  | 'exit'
   | 'teach_artist'
   | 'judge_gallerist'
   | 'battle'
@@ -292,6 +294,23 @@ export interface NPCData {
   };
   x?: number; // Added position for market calculations
   y?: number;
+}
+
+export interface BaseMenuProps {
+  currentY: number;
+  gameState: GameState;
+  setGameState: (updater: (prev: GameState) => GameState) => void;
+  drawMenuButtonHelper: (text: string, action: () => void, color?: string, disabled?: boolean) => void;
+  drawMenuTextHelper: (text: string, color?: string, size?: string, align?: CanvasTextAlign, isBold?: boolean) => void;
+  drawMenuTitleHelper: (title: string) => void;
+  showMessage: (title: string,
+    text: string,
+    options: DialogueOption[]
+  ) => void;
+}
+
+export interface CreateArtMenuProps extends BaseMenuProps {
+  createArt: (artType: string) => void;
 }
 
 export interface PendingInteraction {

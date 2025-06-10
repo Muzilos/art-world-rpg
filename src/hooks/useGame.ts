@@ -11,6 +11,7 @@ import {
   type MarketConditions
 } from '../utils/marketLogic';
 import { checkForMarketNotifications } from '../utils/marketNotifications';
+import { createCloseDialogue } from '../logic/closeDialogueLogic';
 
 interface Keys {
   [key: string]: boolean;
@@ -29,8 +30,6 @@ const INITIAL_STATE: GameState = {
       coffee: { id: 'coffee', name: 'Coffee', type: 'consumable', description: 'Restores 30 energy.', quantity: 2 },
       businessCards: { id: 'businessCards', name: 'Business Cards', type: 'consumable', description: 'Used for networking.', quantity: 0 },
       paintings: { id: 'paintings', name: 'Painting', type: 'art', description: 'A beautiful painting.', quantity: 3, value: 150 },
-      sculptures: { id: 'sculptures', name: 'Sculpture', type: 'art', description: 'A fine sculpture.', quantity: 0, value: 300 },
-      digitalArt: { id: 'digitalArt', name: 'Digital Art', type: 'art', description: 'A digital masterpiece.', quantity: 0, value: 200 }
     },
     skills: {
       artistic: 1,
@@ -72,9 +71,10 @@ export const useGame = () => {
   const { checkQuests } = useQuests(setGameState);
   const currentMap = MAPS[gameState.currentMap];
   const keysRef = useRef<Keys>({});
+  const closeDialogue = createCloseDialogue(setGameState);
 
   // Add menuData to state for passing data to menus
-  const [menuData, setMenuData] = useState<any>(null);
+  const [menuData, setMenuData] = useState<unknown>(null);
 
   // Create mapData using useMemo like in the original
   const mapData = useMemo(() => ({
@@ -103,14 +103,6 @@ export const useGame = () => {
     }),
     exits: currentMap.exits
   }), [currentMap, gameState.currentMap]);
-
-  // Add missing closeDialogue function
-  const closeDialogue = useCallback(() => {
-    setGameState(prev => ({
-      ...prev,
-      dialogue: null,
-    }));
-  }, []);
 
   // Add missing handleCanvasClick function
   const handleCanvasClick = useCallback((x: number, y: number, menu?: MenuType) => {

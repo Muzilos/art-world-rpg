@@ -5,6 +5,7 @@ import { useGame } from './hooks/useGame';
 import { QuestLog } from './components/QuestLog';
 import './App.css';
 import { MAPS } from './constants/maps';
+import { createCloseDialogue } from './logic/closeDialogueLogic';
 
 function App() {
   const {
@@ -16,7 +17,6 @@ function App() {
     activeMenu,
     closeMenu,
     createArt,
-    closeDialogue,
   } = useGame();
 
   React.useEffect(() => {
@@ -32,6 +32,7 @@ function App() {
   }, [handleKeyDown, handleKeyUp]);
 
   const currentMapData = MAPS[gameState.currentMap];
+  const closeDialogue = createCloseDialogue(setGameState);
 
   return (
     <div className="App">

@@ -1,4 +1,5 @@
 import type { GameState, MenuType, ObjectData, Player, GameMap, NPCData } from '../types/game';
+import { createCloseDialogue } from '../logic/closeDialogueLogic';
 
 // Helper Functions
 export const getWrappedLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, font: string) => {
@@ -38,7 +39,6 @@ export const wrapAndDrawText = (
 ) => {
   const padding = style.padding || 10; // Default padding if not specified
   const effectiveWidth = maxWidth - (padding * 2); // Account for padding on both sides
-  
   const lines = getWrappedLines(ctx, text, effectiveWidth, style.font);
   ctx.font = style.font;
   ctx.fillStyle = style.fillStyle;
@@ -224,10 +224,10 @@ export const handleShopTransaction = (
   price: number,
   amount: number,
   setGameState: (updater: (prev: GameState) => GameState) => void,
-  closeDialogue: () => void
 ) => {
   setGameState(prev => {
     const newState = { ...prev };
+    const closeDialogue = createCloseDialogue(setGameState);
     if (newState.player.money >= price * amount) {
       newState.player.money -= price * amount;
       if (!newState.player.inventory[itemKey]) {
