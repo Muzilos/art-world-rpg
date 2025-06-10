@@ -50,7 +50,7 @@ const getInitialState = (): GameState => {
     },
     currentMap: 'studio',
     day: 1,
-    time: 9,
+    time: 9 * 60,
     weather: 'Sunny',
     menu: null,
     dialogue: null,
@@ -217,24 +217,28 @@ export const useGame = () => {
       let skillReq = 0;
       let artKey = '';
       let baseQuality = player.skills.artistic;
+      let time = prev.time;
 
       switch (artType) {
         case 'painting':
           energyCost = 25;
           skillReq = 1;
           artKey = 'paintings';
+          time += Math.floor(Math.random() * 10);
           break;
         case 'sculpture':
           energyCost = 40;
           skillReq = 3;
           artKey = 'sculptures';
           baseQuality *= 0.8;
+          time += Math.floor(Math.random() * 15);
           break;
         case 'digital':
           energyCost = 20;
           skillReq = 5;
           artKey = 'digitalArt';
           baseQuality *= 1.1;
+          time += Math.floor(Math.random() * 5);
           break;
       }
 
@@ -308,6 +312,7 @@ export const useGame = () => {
           exp: player.exp + expGain,
           achievements: newAchievements
         },
+        time: time,
         marketConditions,
         dialogue: {
           title: "Artwork Created!",

@@ -760,10 +760,10 @@ export const GameCanvas = ({
     ctx.fillText(`⚡ ${gameState.player.energy}/100`, statsPadding + 100, statsY + statsHeight / 2);
 
     ctx.fillStyle = '#F87171';
-    ctx.fillText(`⭐ ${gameState.player.reputation}`, statsPadding + 200, statsY + statsHeight / 2);
+    ctx.fillText(`⭐ ${Math.floor(gameState.player.reputation)}`, statsPadding + 200, statsY + statsHeight / 2);
 
     ctx.fillStyle = '#A78BFA';
-    ctx.fillText(`${gameState.time.toString().padStart(2, '0')}:00`, statsPadding + 300, statsY + statsHeight / 2);
+    ctx.fillText(`🕐 ${(Math.floor(gameState.time / 60)).toString().padStart(2, '0')}:${(gameState.time % 60).toString().padStart(2, '0')}`, statsPadding + 300, statsY + statsHeight / 2);
 
     // Draw UI icons
     const iconSize = 40;
