@@ -13,10 +13,10 @@ import { createCloseDialogue } from '../logic/closeDialogueLogic';
 import { handleBattleAction } from '../logic/battleLogic'; // Import the new logic
 
 const getInitialState = (): GameState => {
-  const savedPlayerJSON = localStorage.getItem('art-world-rpg-player-stats');
-  const savedPlayer = savedPlayerJSON ? JSON.parse(savedPlayerJSON) : null;
+  const savedGameJSON = localStorage.getItem('art-world-rpg-game-state');
+  const savedGame = savedGameJSON ? JSON.parse(savedGameJSON) : null;
 
-  const initialState: GameState = {
+  const initialState: GameState = savedGame || {
     player: {
         x: 240,
         y: 240,
@@ -64,10 +64,6 @@ const getInitialState = (): GameState => {
     marketConditions: null
   };
 
-  if (savedPlayer) {
-    initialState.player = savedPlayer;
-  }
-
   return initialState;
 };
 
@@ -82,8 +78,8 @@ export const useGame = () => {
   const [menuData, setMenuData] = useState<unknown>(null);
 
   useEffect(() => {
-    localStorage.setItem('art-world-rpg-player-stats', JSON.stringify(gameState.player));
-  }, [gameState.player]);
+    localStorage.setItem('art-world-rpg-game-state', JSON.stringify(gameState));
+  }, [gameState]);
 
   // Create mapData using useMemo like in the original
   const mapData = useMemo(() => ({
@@ -98,7 +94,7 @@ export const useGame = () => {
       const [x, y] = posKey.split(',').map((p: string): number => Number(p));
       return {
         id: posKey,
-        type: obj.type as 'npc' | 'npc_collector' | 'npc_critic' | 'shop' | 'quest',
+        type: obj.type as MenuType,
         x: x * 32,
         y: y * 32,
         data: {

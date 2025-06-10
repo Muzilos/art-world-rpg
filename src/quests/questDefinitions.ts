@@ -21,7 +21,7 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     id: 'first_sale',
     name: 'First Sale',
     description: 'Create and sell your first artwork to a collector.',
-    checkComplete: (gs) => gs.player.money > 500 && gs.player.completedQuests.length > 0,
+    checkComplete: (gs) => gs.player.achievements.includes('first_artwork_sold'),
     reward: { exp: 50, money: 100, reputation: 5 },
     unlocksQuests: ['network_intro', 'brooklyn_scout']
   },

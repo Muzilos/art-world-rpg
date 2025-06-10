@@ -1,4 +1,5 @@
 import type { Maps } from '../types/maps';
+import { INTERACTION_TYPES } from './game';
 
 export const MAPS: Maps = {
   studio: {
@@ -26,27 +27,27 @@ export const MAPS: Maps = {
     objects: {
       '2,2': {
         type: 'easel',
-        interaction: 'create_art',
+        interaction: INTERACTION_TYPES.CREATE_ART,
         name: 'Easel'
       },
       '7,2': {
         type: 'computer',
-        interaction: 'create_art',
+        interaction: INTERACTION_TYPES.CREATE_ART,
         name: 'Computer'
       },
       '2,6': {
         type: 'bed',
-        interaction: 'rest',
+        interaction: INTERACTION_TYPES.REST,
         name: 'Bed'
       },
       '7,6': {
         type: 'bookshelf',
-        interaction: 'study',
+        interaction: INTERACTION_TYPES.STUDY,
         name: 'Bookshelf'
       },
       '7,0': {
         type: 'gallery_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Gallery Door'
       }
     },
@@ -89,81 +90,81 @@ export const MAPS: Maps = {
       '3,2': {
         type: 'npc_collector',
         name: 'Victoria Sterling',
-        interaction: 'talk_npc' // Make sure this is 'talk_npc' not something else
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '10,5': {
         type: 'npc_artist',
         name: 'Jackson Park',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '6,10': {
         type: 'npc_critic',
         name: 'Eleanor Sharp',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '15,7': {
         type: 'npc_gallerist',
         name: 'Marcus Chen',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '12,8': {
         type: 'npc_influencer',
         name: 'Luna Vega',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '8,12': {
         type: 'npc_dealer',
         name: 'Rico Martinez',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '4,8': {
         type: 'npc_historian',
         name: 'Dr. Elizabeth Black',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '16,12': {
         type: 'npc_curator',
         name: 'Sophia Chen',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '5,15': {
         type: 'gallery_door',
         name: 'Pace Gallery',
-        interaction: 'enter_gallery_pace'
+        interaction: INTERACTION_TYPES.ENTER_GALLERY_PACE
       },
       '16,15': {
         type: 'gallery_door',
         name: 'Rising Stars Gallery',
-        interaction: 'enter_gallery_rising'
+        interaction: INTERACTION_TYPES.ENTER_GALLERY_RISING
       },
       '10,3': {
         type: 'info_board',
-        interaction: 'check_events',
+        interaction: INTERACTION_TYPES.CHECK_EVENTS,
         name: 'Events Board'
       },
       '7,1': {
         type: 'studio_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Studio Door'
       },
       '0,6': {
         type: 'brooklyn_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Brooklyn Door'
       },
       '0,7': {
         type: 'brooklyn_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Brooklyn Door'
       },
       '19,7': {
         type: 'soho_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'SoHo Door'
       },
       '19,8': {
         type: 'soho_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'SoHo Door'
       }
     },
@@ -223,41 +224,41 @@ export const MAPS: Maps = {
       '4,9': {
         type: 'warehouse_studio',
         name: 'Bushwick Collective Studio',
-        interaction: 'enter_warehouse'
+        interaction: INTERACTION_TYPES.ENTER_WAREHOUSE
       },
       '14,3': {
         type: 'coffee_shop',
         name: 'Grindhouse Coffee',
-        interaction: 'buy_coffee'
+        interaction: INTERACTION_TYPES.BUY_COFFEE
       },
       '4,3': {
         type: 'street_vendor',
         name: 'Street Art Supplies',
-        interaction: 'buy_supplies'
+        interaction: INTERACTION_TYPES.BUY_SUPPLIES
       },
       '14,9': {
         type: 'thrift_store',
         name: 'Beacon\'s Closet (ish)',
-        interaction: 'shop_thrift_store'
+        interaction: INTERACTION_TYPES.SHOP_THRIFT_STORE
       },
       '9,6': {
         type: 'npc_hipster',
         name: 'Ezra Moon',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '7,2': {
         type: 'npc_muralist',
         name: 'Maya Rodriguez',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '19,6': {
         type: 'gallery_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Gallery Door'
       },
       '19,7': {
         type: 'gallery_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Gallery Door'
       }
     },
@@ -302,41 +303,41 @@ export const MAPS: Maps = {
       '3,3': {
         type: 'luxury_gallery',
         name: 'Gagosian Gallery (esque)',
-        interaction: 'enter_luxury_gallery'
+        interaction: INTERACTION_TYPES.ENTER_LUXURY_GALLERY
       },
       '12,3': {
         type: 'art_supply_pro',
         name: 'Pro Art Supplies',
-        interaction: 'buy_supplies'
+        interaction: INTERACTION_TYPES.BUY_SUPPLIES
       },
       '3,9': {
         type: 'fashion_boutique',
         name: 'Chic Boutique',
-        interaction: 'shop_fashion_boutique'
+        interaction: INTERACTION_TYPES.SHOP_FASHION_BOUTIQUE
       },
       '12,9': {
         type: 'wine_bar',
         name: 'The Velvet Rope Wine Bar',
-        interaction: 'network_wine_bar'
+        interaction: INTERACTION_TYPES.NETWORK_WINE_BAR
       },
       '8,6': {
         type: 'npc_influencer',
         name: 'Chloe Kim',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '6,11': {
         type: 'npc_dealer',
         name: 'Philippe Dubois',
-        interaction: 'talk_npc'
+        interaction: INTERACTION_TYPES.TALK_NPC
       },
       '0,6': {
         type: 'gallery_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Gallery Door'
       },
       '0,7': {
         type: 'gallery_door',
-        interaction: 'exit',
+        interaction: INTERACTION_TYPES.EXIT,
         name: 'Gallery Door'
       }
     },

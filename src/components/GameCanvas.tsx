@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import type { GameState, GameMap, MenuType, NPCData, ObjectData } from '../types/game';
-import { SPRITES, TILE_COLORS } from '../constants/game';
+import { INTERACTION_TYPES, SPRITES, TILE_COLORS } from '../constants/game';
 import { wrapAndDrawText, getWrappedLines } from '../utils/gameLogic';
 import { QUEST_DEFINITIONS } from '../quests/questDefinitions';
 import { MAPS } from '../constants/maps';
@@ -15,6 +15,7 @@ import { ArtSuppliesMenu } from './GameMenus/ArtSuppliesMenu';
 import { CoffeeShopMenu } from './GameMenus/CoffeeShopMenu';
 import { NPCDialogueMenu } from './GameMenus/NpcDialogueMenu';
 import { getNPCDialogue } from '../logic/npcDialogueLogic';
+import { drawRoundedRect } from '../logic/canvasUIHelpers';
 
 const TILE_SIZE = 32;
 
@@ -54,34 +55,6 @@ export const GameCanvas = ({
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   // UI Helper Functions
-  const drawRoundedRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    r: number,
-    fill: string,
-    stroke: { color: string; width: number } | null = null
-  ) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-    if (fill) {
-      ctx.fillStyle = fill;
-      ctx.fill();
-    }
-    if (stroke) {
-      ctx.strokeStyle = stroke.color;
-      ctx.lineWidth = stroke.width;
-      ctx.stroke();
-    }
-  };
-
   const addClickable = (x: number, y: number, width: number, height: number, action: () => void) => {
     if (typeof action === 'function') {
       uiClickableElementsRef.current.push({ x, y, width, height, action });
@@ -112,6 +85,12 @@ export const GameCanvas = ({
         if (newState.player.inventory[artKey].quantity <= 0) {
           delete newState.player.inventory[artKey];
         }
+
+        // Add achievement for the first sale
+        if (!newState.player.achievements.includes('first_artwork_sold')) {
+          newState.player.achievements.push('first_artwork_sold');
+        }
+
         showMessage(
           "Artwork Sold!",
           `You sold your artwork to ${collectorName} for $${price}.`,
@@ -711,7 +690,7 @@ export const GameCanvas = ({
 
         const isOnInteractiveObject = Object.entries(currentMap.objects).some(([key, obj]) => {
           const [objTileX, objTileY] = key.split(',').map(Number);
-          const isInteractive = ['exit', 'npc', 'shop', 'create_art', 'rest', 'study', 'buy_coffee', 'buy_supplies', 'talk_npc'].includes(obj.interaction);
+          const isInteractive = Object.values(INTERACTION_TYPES).includes(obj.interaction as keyof typeof INTERACTION_TYPES);
           return objTileX === mouseTileX && objTileY === mouseTileY && isInteractive;
         });
 
@@ -1016,7 +995,7 @@ export const GameCanvas = ({
 
     // Handle other interactions
     switch (obj.interaction) {
-      case 'exit': {
+      case INTERACTION_TYPES.EXIT: {
         const currentMapData = MAPS[gameState.currentMap];
         const exitKey = `${Math.floor(obj.x / 32)},${Math.floor(obj.y / 32)}`;
         const exitData = currentMapData.exits?.[exitKey];
@@ -1034,22 +1013,22 @@ export const GameCanvas = ({
         }
         break;
       }
-      case 'create_art':
-        setGameState(prev => ({ ...prev, menu: 'create_art' }));
+      case INTERACTION_TYPES.CREATE_ART:
+        setGameState(prev => ({ ...prev, menu: INTERACTION_TYPES.CREATE_ART }));
         break;
-      case 'rest':
-        setGameState(prev => ({ ...prev, menu: 'rest' }));
+      case INTERACTION_TYPES.REST:
+        setGameState(prev => ({ ...prev, menu: INTERACTION_TYPES.REST }));
         break;
-      case 'buy_coffee':
-        setGameState(prev => ({ ...prev, menu: 'buy_coffee' }));
+      case INTERACTION_TYPES.BUY_COFFEE:
+        setGameState(prev => ({ ...prev, menu: INTERACTION_TYPES.BUY_COFFEE }));
         break;
-      case 'buy_supplies':
-        setGameState(prev => ({ ...prev, menu: 'buy_supplies' }));
+      case INTERACTION_TYPES.BUY_SUPPLIES:
+        setGameState(prev => ({ ...prev, menu: INTERACTION_TYPES.BUY_SUPPLIES }));
         break;
-      case 'talk_npc':
-        setGameState(prev => ({ ...prev, menu: 'talk_npc', menuData: npcData }));
+      case INTERACTION_TYPES.TALK_NPC:
+        setGameState(prev => ({ ...prev, menu: INTERACTION_TYPES.TALK_NPC, menuData: npcData }));
         break;
-      case 'study':
+      case INTERACTION_TYPES.STUDY:
         setGameState(prev => ({ ...prev, menu: 'study' }));
         break;
       case 'teach_artist':
@@ -1090,7 +1069,7 @@ export const GameCanvas = ({
     if (gameState.pendingInteraction &&
       gameState.player.x === gameState.pendingInteraction.x &&
       gameState.player.y === gameState.pendingInteraction.y) {
-      if (gameState.pendingInteraction.type === 'exit') {
+      if (gameState.pendingInteraction.type === INTERACTION_TYPES.EXIT) {
         handleInteraction(gameState.pendingInteraction.data);
       }
       setGameState(prev => ({ ...prev, pendingInteraction: null }));
@@ -1170,7 +1149,7 @@ export const GameCanvas = ({
     const clickedObject = Object.entries(currentMap.objects).find(([key, obj]) => {
       const [objTileX, objTileY] = key.split(',').map(Number);
       return objTileX === tileX && objTileY === tileY &&
-        ['exit', 'npc', 'shop', 'create_art', 'rest', 'study', 'buy_coffee', 'buy_supplies', 'talk_npc'].includes(obj.interaction);
+        Object.values(INTERACTION_TYPES).includes(obj.interaction as keyof typeof INTERACTION_TYPES);
     });
 
     if (clickedObject) {

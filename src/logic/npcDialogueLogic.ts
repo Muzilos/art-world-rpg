@@ -53,7 +53,8 @@ export const getNPCDialogue = (
       } else if (player.reputation < 5 && relationshipLevel < 3) {
         return {
           text: "You need to make more of a name for yourself before I consider your work.",
-          options: [{ text: "OK", action: closeDialogue,
+          options: [{
+            text: "OK", action: closeDialogue,
             condition: false,
             color: '',
             disabled: false,
@@ -249,7 +250,8 @@ export const getNPCDialogue = (
       if (player.reputation < 15 && relationshipLevel < 3) {
         return {
           text: "I only deal with artists who have proven themselves in the market.",
-          options: [{ text: "OK", action: closeDialogue,
+          options: [{
+            text: "OK", action: closeDialogue,
             condition: false,
             color: '',
             disabled: false,
@@ -440,7 +442,8 @@ export const getNPCDialogue = (
       if (player.reputation < 20 && relationshipLevel < 3) {
         return {
           text: "I only work with artists who have established themselves in the art world.",
-          options: [{ text: "OK", action: closeDialogue,
+          options: [{
+            text: "OK", action: closeDialogue,
             condition: false,
             color: '',
             disabled: false,
@@ -631,22 +634,29 @@ export const getNPCDialogue = (
                 const success = Math.random() < (0.3 + player.reputation * 0.01);
                 const repChange = success ? 15 : -5;
                 const moneyGain = success ? 300 : 0;
-                deps.setGameState(prev => ({
-                  ...prev,
-                  player: {
-                    ...prev.player,
-                    energy: prev.player.energy - 25,
-                    reputation: prev.player.reputation + repChange,
-                    money: prev.player.money + moneyGain
-                  },
-                  dialogue: {
-                    title: success ? "Portfolio Accepted!" : "Portfolio Rejected",
-                    text: success
-                      ? `Your work will be featured!\n+${repChange} Reputation\n+$${moneyGain}`
-                      : `Not quite what we're looking for.\n${repChange} Reputation`,
-                    options: [{ text: success ? "Fantastic!" : "I'll keep trying", action: closeDialogue }]
-                  }
-                }));
+                deps.setGameState(prev => {
+
+                  const newAchievements = success && !prev.player.achievements.includes('hosted_gallery_show')
+                    ? [...prev.player.achievements, 'hosted_gallery_show']
+                    : prev.player.achievements;
+                  return {
+                    ...prev,
+                    player: {
+                      ...prev.player,
+                      energy: prev.player.energy - 25,
+                      reputation: prev.player.reputation + repChange,
+                      money: prev.player.money + moneyGain,
+                      achievements: newAchievements
+                    },
+                    dialogue: {
+                      title: success ? "Portfolio Accepted!" : "Portfolio Rejected",
+                      text: success
+                        ? `Your work will be featured!\n+${repChange} Reputation\n+$${moneyGain}`
+                        : `Not quite what we're looking for.\n${repChange} Reputation`,
+                      options: [{ text: success ? "Fantastic!" : "I'll keep trying", action: closeDialogue }]
+                    }
+                  };
+                });
               }
             },
             {

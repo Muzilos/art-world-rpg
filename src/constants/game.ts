@@ -75,6 +75,27 @@ export const PLAYER_TITLES: PlayerTitle[] = [
   { rep: 2000, level: 25, title: 'Living Legend' }
 ];
 
+export const INTERACTION_TYPES = {
+  TALK_NPC: 'talk_npc',
+  CREATE_ART: 'create_art',
+  REST: 'rest',
+  SELL_ART: 'sell_art',
+  BATTLE: 'battle',
+  BROWSE_ART: 'browse_art',
+  STUDY: 'study',
+  ENTER_GALLERY_PACE: 'enter_gallery_pace',
+  ENTER_GALLERY_RISING: 'enter_gallery_rising',
+  CHECK_EVENTS: 'check_events',
+  EXIT: 'exit',
+  ENTER_WAREHOUSE: 'enter_warehouse',
+  BUY_COFFEE: 'buy_coffee',
+  BUY_SUPPLIES: 'buy_supplies',
+  SHOP_THRIFT_STORE: 'shop_thrift_store',
+  ENTER_LUXURY_GALLERY: 'enter_luxury_gallery',
+  SHOP_FASHION_BOUTIQUE: 'shop_fashion_boutique',
+  NETWORK_WINE_BAR: 'network_wine_bar'
+} as const;
+
 export const BATTLE_ACTIONS: BattleAction[] = [
   {
     id: 'defend_concept',
