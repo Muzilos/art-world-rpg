@@ -253,8 +253,8 @@ export const GameCanvas = ({
     color = '#3B82F6',
     disabled = false
   ) => {
-    const lineHeight = 20;
-    ctx.font = 'bold 14px Noto Sans';
+    const lineHeight = 10;
+    ctx.font = 'bold 10px Noto Sans';
     const lines = getWrappedLines(ctx, text, width, ctx.font);
     const textHeight = lines.length * lineHeight;
     const textY = y + (height - textHeight) / 2 + lineHeight * 0.85;
@@ -277,7 +277,7 @@ export const GameCanvas = ({
     lines.forEach((line: string, i: number) => {
       wrapAndDrawText(ctx, line, x, textY + i * lineHeight, width, lineHeight, {
         fillStyle: textColor,
-        font: 'bold 14px Noto Sans',
+        font: 'bold 12px Noto Sans',
         textAlign: 'center' as CanvasTextAlign
       });
     });
@@ -340,12 +340,11 @@ export const GameCanvas = ({
       });
     };
 
-    const drawMenuButtonHelper = (text: string, action: () => void, color = '#3B82F6', disabled = false) => {
-      const btnWidth = boxWidth - padding * 2;
-      const btnX = boxX + padding;
+    const drawMenuButtonHelper = (text: string, action: () => void, color = '#3B82F6', disabled = false,
+      pushY: boolean = true, btnX = boxX + padding, btnWidth = boxWidth - padding * 2) => {
       const buttonY = currentY; // <-- capture before using it
       drawMenuButton(ctx, text, btnX, buttonY, btnWidth, buttonHeight, action, color, disabled);
-      currentY += buttonHeight + buttonMargin;
+      if (pushY) currentY += buttonHeight + buttonMargin;
     };
 
     const drawMenuTextHelper = (text: string, color?: string, size?: string, align?: CanvasTextAlign, isBold?: boolean) => {
@@ -386,7 +385,15 @@ export const GameCanvas = ({
       case 'battle':
         currentY = BattleMenu({
           currentY, gameState, setGameState, drawMenuButtonHelper, drawMenuTextHelper, drawMenuTitleHelper, showMessage,
-          performBattleAction
+          performBattleAction,
+          // Pass down the necessary props for custom drawing
+          ctx: ctx,
+          boxX: boxX,
+          boxWidth: boxWidth,
+          padding: padding,
+          buttonMargin: buttonMargin,
+          addClickable: addClickable,
+          mousePos: mousePos
         });
         break;
       case 'talk_npc':
@@ -621,15 +628,17 @@ export const GameCanvas = ({
       }
     }
 
-    // Add close button
-    const closeBtnWidth = 120;
-    const closeBtnHeight = 30;
-    const closeBtnX = boxX + boxWidth - closeBtnWidth - padding;
-    const closeBtnY = boxY + boxHeight - closeBtnHeight - padding;
+    // Add close button, but not for the battle menu
+    if (gameState.menu !== 'battle') {
+      const closeBtnWidth = 120;
+      const closeBtnHeight = 30;
+      const closeBtnX = boxX + boxWidth - closeBtnWidth - padding;
+      const closeBtnY = boxY + boxHeight - closeBtnHeight - padding;
 
-    drawMenuButton(ctx, 'Close', closeBtnX, closeBtnY, closeBtnWidth, closeBtnHeight, () => {
-      onCanvasClick(-1000, -1000);
-    }, '#7C3AED');
+      drawMenuButton(ctx, 'Close', closeBtnX, closeBtnY, closeBtnWidth, closeBtnHeight, () => {
+        onCanvasClick(-1000, -1000);
+      }, '#7C3AED');
+    }
   };
 
   const drawGame = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {

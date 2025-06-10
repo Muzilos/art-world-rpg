@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { GameState, MenuType, BattleState } from '../types/game';
 import { handleInteraction, updatePlayerPosition } from '../utils/gameLogic';
 import { aStar } from '../utils/pathfinding';
@@ -12,63 +12,78 @@ import { checkForMarketNotifications } from '../utils/marketNotifications';
 import { createCloseDialogue } from '../logic/closeDialogueLogic';
 import { handleBattleAction } from '../logic/battleLogic'; // Import the new logic
 
-// Add marketConditions to INITIAL_STATE
-const INITIAL_STATE: GameState = {
-  player: {
-    x: 240,
-    y: 240,
-    facing: 'down',
-    sprite: 0,
-    money: 500,
-    reputation: 0,
-    inventory: {
-      coffee: { id: 'coffee', name: 'Coffee', type: 'consumable', description: 'Restores 30 energy.', quantity: 2 },
-      businessCards: { id: 'businessCards', name: 'Business Cards', type: 'consumable', description: 'Used for networking.', quantity: 0 },
-      paintings: { id: 'paintings', name: 'Painting', type: 'art', description: 'A beautiful painting.', quantity: 3, value: 150 },
+const getInitialState = (): GameState => {
+  const savedPlayerJSON = localStorage.getItem('art-world-rpg-player-stats');
+  const savedPlayer = savedPlayerJSON ? JSON.parse(savedPlayerJSON) : null;
+
+  const initialState: GameState = {
+    player: {
+        x: 240,
+        y: 240,
+        facing: 'down',
+        sprite: 0,
+        money: 500,
+        reputation: 0,
+        inventory: {
+          coffee: { id: 'coffee', name: 'Coffee', type: 'consumable', description: 'Restores 30 energy.', quantity: 2 },
+          businessCards: { id: 'businessCards', name: 'Business Cards', type: 'consumable', description: 'Used for networking.', quantity: 0 },
+          paintings: { id: 'paintings', name: 'Painting', type: 'art', description: 'A beautiful painting.', quantity: 3, value: 150 },
+        },
+        skills: {
+          artistic: 1,
+          networking: 1,
+          business: 1,
+          curating: 1
+        },
+        quests: ['first_sale'],
+        energy: 100,
+        level: 1,
+        exp: 0,
+        title: 'Aspiring Artist',
+        equipment: {
+          brush: 'basic',
+          outfit: 'casual'
+        },
+        relationships: {},
+        completedQuests: [],
+        achievements: []
     },
-    skills: {
-      artistic: 1,
-      networking: 1,
-      business: 1,
-      curating: 1
-    },
-    quests: ['first_sale'],
-    energy: 100,
-    level: 1,
-    exp: 0,
-    title: 'Aspiring Artist',
-    equipment: {
-      brush: 'basic',
-      outfit: 'casual'
-    },
-    relationships: {},
-    completedQuests: [],
-    achievements: []
-  },
-  currentMap: 'studio',
-  day: 1,
-  time: 9,
-  weather: 'Sunny',
-  menu: null,
-  dialogue: null,
-  battle: null,
-  music: true,
-  events: [],
-  unlockedMaps: ['studio', 'gallery'],
-  marketMultiplier: 1.0,
-  gameTick: 0,
-  pendingInteraction: null,
-  marketConditions: null
+    currentMap: 'studio',
+    day: 1,
+    time: 9,
+    weather: 'Sunny',
+    menu: null,
+    dialogue: null,
+    battle: null,
+    music: true,
+    events: [],
+    unlockedMaps: ['studio', 'gallery'],
+    marketMultiplier: 1.0,
+    gameTick: 0,
+    pendingInteraction: null,
+    marketConditions: null
+  };
+
+  if (savedPlayer) {
+    initialState.player = savedPlayer;
+  }
+
+  return initialState;
 };
 
+
 export const useGame = () => {
-  const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
+  const [gameState, setGameState] = useState<GameState>(getInitialState());
   const { checkQuests } = useQuests(setGameState);
   const currentMap = MAPS[gameState.currentMap];
   const closeDialogue = createCloseDialogue(setGameState);
 
   // Add menuData to state for passing data to menus
   const [menuData, setMenuData] = useState<unknown>(null);
+
+  useEffect(() => {
+    localStorage.setItem('art-world-rpg-player-stats', JSON.stringify(gameState.player));
+  }, [gameState.player]);
 
   // Create mapData using useMemo like in the original
   const mapData = useMemo(() => ({

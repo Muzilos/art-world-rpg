@@ -2,18 +2,31 @@
 import { BATTLE_ACTIONS } from '../../constants/game';
 import type { BaseMenuProps } from '../../types/game';
 
+// Define a more specific props interface for the BattleMenu
 interface BattleMenuProps extends BaseMenuProps {
   performBattleAction: (actionId: string) => void;
+  // Add new props for direct drawing
+  ctx: CanvasRenderingContext2D;
+  boxX: number;
+  boxWidth: number;
+  padding: number;
+  buttonMargin: number;
+  addClickable: (x: number, y: number, width: number, height: number, action: () => void) => void;
+  mousePos: { x: number; y: number } | null;
 }
 
 export const BattleMenu = ({
   currentY,
   gameState,
   setGameState,
-  drawMenuButtonHelper,
   drawMenuTextHelper,
   drawMenuTitleHelper,
+  drawMenuButtonHelper,
   performBattleAction,
+  boxX,
+  boxWidth,
+  padding,
+  buttonMargin,
 }: BattleMenuProps): number => {
   drawMenuTitleHelper('Critique Battle');
   currentY += 10;
@@ -24,62 +37,48 @@ export const BattleMenu = ({
   // Display opponent and player stats
   drawMenuTextHelper(`Opponent: ${battle.opponent.name}`, '#CBD5E1', '16px', 'center', true);
   drawMenuTextHelper(`HP: ${battle.opponent.hp}/${battle.opponent.maxHp}`, '#EF4444', '15px', 'center');
-  currentY += 20;
   
   drawMenuTextHelper(`Player`, '#CBD5E1', '16px', 'center', true);
   drawMenuTextHelper(`HP: ${battle.player.hp}/${battle.player.maxHp}`, '#22C55E', '15px', 'center');
   drawMenuTextHelper(`Energy: ${gameState.player.energy}/100`, '#FACC15', '15px', 'center');
-  currentY += 20;
 
   // Display the last few log entries
   (battle.log || []).slice(-3).forEach(logEntry => {
     drawMenuTextHelper(logEntry, '#9CA3AF', '14px', 'center');
-    currentY += 5;
   });
-  currentY += 15;
 
   if (battle.turn === 'player') {
     const allActions = BATTLE_ACTIONS;
-    const buttonMargin = 10;
-    const twoButtonWidth = (480 * 0.9 - 40 - buttonMargin) / 2; // (boxWidth - padding*2 - margin) / 2
-    const boxX = (480 - 480 * 0.9) / 2;
-    const padding = 20;
+    const buttonHeight = 40;
+    const twoButtonWidth = (boxWidth - padding * 2 - buttonMargin) / 2;
 
     // --- Draw Battle Actions in a 2x2 Grid ---
     for (let i = 0; i < allActions.length; i++) {
         const action = allActions[i];
         const canAfford = gameState.player.energy >= action.cost;
         
-        // Calculate position for a 2-column layout
         const isLeftColumn = i % 2 === 0;
         const buttonX = isLeftColumn 
             ? boxX + padding 
             : boxX + padding + twoButtonWidth + buttonMargin;
         
-        // Use a temporary Y position that only increments after every second button
-        const buttonY = currentY + Math.floor(i / 2) * (40 + 8);
-
-        // We need a custom drawMenuButton call here to handle the custom width and position
-        const btnWidth = twoButtonWidth;
-        const btnHeight = 40;
-        
-        // This is a manual call to the underlying draw function from GameCanvas
-        // In a real scenario, you would pass the drawMenuButton function itself
         drawMenuButtonHelper(
-            `${action.name} (${action.cost} EGY)`,
+            `${action.name} (${action.cost}⚡)`,
             () => performBattleAction(action.id),
             '#DC2626',
-            !canAfford
+            !canAfford,
+            i % 2 === 1,
+            buttonX,
+            twoButtonWidth
         );
     }
-    // Increment currentY based on the rows we added
-    currentY += Math.ceil(allActions.length / 2) * (40 + 8);
+    currentY += Math.ceil(allActions.length / 2) * (buttonHeight + buttonMargin);
 
 
     // --- Draw Item and Flee buttons as full-width rows ---
     const hasCoffee = (gameState.player.inventory.coffee?.quantity || 0) > 0;
     drawMenuButtonHelper(
-      `Use Coffee (+30 EGY)`,
+      `Use Coffee (+30⚡)`,
       () => {
         setGameState(prev => {
           if (!prev.battle || (prev.player.inventory.coffee?.quantity || 0) <= 0) {
@@ -112,8 +111,12 @@ export const BattleMenu = ({
         });
       },
       '#16A34A',
-      !hasCoffee
+      !hasCoffee,
+      true,
+      boxX + padding,
+      boxWidth - padding * 2
     );
+    currentY += buttonHeight + buttonMargin;
 
     drawMenuButtonHelper('Flee', () => {
       setGameState(prev => ({
@@ -127,6 +130,7 @@ export const BattleMenu = ({
         }
       }));
     }, '#6B7280');
+    currentY += buttonHeight + buttonMargin;
 
   } else {
     drawMenuTextHelper(`${battle.opponent.name} is thinking...`, '#F59E0B', '16px', 'center', true);

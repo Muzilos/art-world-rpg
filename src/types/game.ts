@@ -300,7 +300,7 @@ export interface BaseMenuProps {
   currentY: number;
   gameState: GameState;
   setGameState: (updater: (prev: GameState) => GameState) => void;
-  drawMenuButtonHelper: (text: string, action: () => void, color?: string, disabled?: boolean) => void;
+  drawMenuButtonHelper: (text: string, action: () => void, color?: string, disabled?: boolean, pushY?: boolean, buttonX?: number, buttonWidth?: number) => void;
   drawMenuTextHelper: (text: string, color?: string, size?: string, align?: CanvasTextAlign, isBold?: boolean) => void;
   drawMenuTitleHelper: (title: string) => void;
   showMessage: (title: string,
