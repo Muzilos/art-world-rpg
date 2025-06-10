@@ -754,16 +754,20 @@ export const GameCanvas = ({
     ctx.textBaseline = 'middle';
 
     ctx.fillStyle = '#4ADE80';
-    ctx.fillText(`$ ${gameState.player.money}`, statsPadding + 10, statsY + statsHeight / 2);
+    ctx.fillText(`$ ${gameState.player.money}`, statsPadding + 5, statsY + statsHeight / 2);
 
     ctx.fillStyle = '#FACC15';
     ctx.fillText(`⚡ ${gameState.player.energy}/100`, statsPadding + 100, statsY + statsHeight / 2);
 
     ctx.fillStyle = '#F87171';
-    ctx.fillText(`⭐ ${Math.floor(gameState.player.reputation)}`, statsPadding + 200, statsY + statsHeight / 2);
+    ctx.fillText(`⭐ ${Math.floor(gameState.player.reputation)}`, statsPadding + 180, statsY + statsHeight / 2);
 
     ctx.fillStyle = '#A78BFA';
-    ctx.fillText(`🕐 ${(Math.floor(gameState.time / 60)).toString().padStart(2, '0')}:${(gameState.time % 60).toString().padStart(2, '0')}`, statsPadding + 300, statsY + statsHeight / 2);
+    ctx.fillText(`🕐 ${(Math.floor(gameState.time / 60)).toString().padStart(2, '0')}:${(gameState.time % 60).toString().padStart(2, '0')}`,
+      statsPadding + 260, statsY + statsHeight / 2);
+
+    ctx.fillStyle = '#A78BFA';
+    ctx.fillText(`🌅 Day ${gameState.day}`, statsPadding + 350, statsY + statsHeight / 2);
 
     // Draw UI icons
     const iconSize = 40;

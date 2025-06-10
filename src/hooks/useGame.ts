@@ -299,6 +299,11 @@ export const useGame = () => {
         };
       }
 
+
+      // Update time and day
+      const newDay = time >= 24 * 60 ? prev.day + 1 : prev.day;
+      const newTime = time % (24 * 60);
+
       return {
         ...prev,
         player: {
@@ -312,7 +317,8 @@ export const useGame = () => {
           exp: player.exp + expGain,
           achievements: newAchievements
         },
-        time: time,
+        time: newTime,
+        day: newDay,
         marketConditions,
         dialogue: {
           title: "Artwork Created!",
