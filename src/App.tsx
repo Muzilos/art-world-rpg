@@ -9,25 +9,27 @@ import { MAPS } from './constants/maps';
 function App() {
   const {
     gameState,
-    currentMap,
     handleCanvasClick,
     setGameState,
-    createArt,
-    closeDialogue,
     handleKeyDown,
     handleKeyUp,
-    mapData
+    activeMenu,
+    closeMenu,
   } = useGame();
 
   React.useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
+    const cleanup = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return cleanup;
   }, [handleKeyDown, handleKeyUp]);
+
+  const currentMapData = MAPS[gameState.currentMap];
 
   return (
     <div className="App">
@@ -36,16 +38,23 @@ function App() {
         <div className="relative mx-auto w-[480px] h-[480px] border-2 border-purple-500/70 rounded-lg overflow-hidden shadow-2xl bg-black cursor-pointer">
           <GameCanvas
             gameState={gameState}
-            currentMap={MAPS[gameState.currentMap]}
+            currentMap={currentMapData}
             onCanvasClick={handleCanvasClick}
             setGameState={setGameState}
-            createArt={createArt}
-            closeDialogue={closeDialogue}
           />
         </div>
-        {gameState.menu === 'quests' && (
-          <div className="menu-overlay">
-            <QuestLog gameState={gameState} />
+        {activeMenu === 'quests' && (
+          <div className="menu-overlay" onClick={closeMenu}>
+            <div onClick={(e) => e.stopPropagation()}>
+              <QuestLog gameState={gameState} />
+            </div>
+          </div>
+        )}
+        {activeMenu === 'artDealer' && (
+          <div className="menu-overlay" onClick={closeMenu}>
+            <div onClick={(e) => e.stopPropagation()}>
+              {/* Your ArtDealer component */}
+            </div>
           </div>
         )}
       </div>
