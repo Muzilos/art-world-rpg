@@ -3,19 +3,20 @@ import { GameUI } from './components/GameUI';
 import { useGame } from './hooks/useGame';
 import './App.css';
 import { MAPS } from './constants/maps';
-import { createCloseDialogue } from './logic/closeDialogueLogic';
+import { UIOverlay } from './components/UIOverlay';
 
 function App() {
   const {
     gameState,
-    handleCanvasClick,
     setGameState,
+    handleCanvasClick,
     createArt,
     performBattleAction,
+    closeDialogue,
+    showMessage
   } = useGame();
 
   const currentMapData = MAPS[gameState.currentMap];
-  const closeDialogue = createCloseDialogue(setGameState);
 
   return (
     <div className="App">
@@ -26,10 +27,14 @@ function App() {
             gameState={gameState}
             currentMap={currentMapData}
             onCanvasClick={handleCanvasClick}
+          />
+          <UIOverlay 
+            gameState={gameState}
             setGameState={setGameState}
             createArt={createArt}
-            closeDialogue={closeDialogue}
             performBattleAction={performBattleAction}
+            closeDialogue={closeDialogue}
+            showMessage={showMessage}
           />
         </div>
       </div>

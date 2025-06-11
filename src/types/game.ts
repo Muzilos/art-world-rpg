@@ -1,7 +1,3 @@
-// types/game.ts - Updated to include market system
-
-import type { DialogueOption } from "../logic/npcDialogueLogic";
-
 export interface Position {
   x: number;
   y: number;
@@ -33,17 +29,15 @@ export interface Player {
   achievements: string[];
 }
 
-// Updated InventoryItem to include market value
 export interface InventoryItem {
   id: string;
   name: string;
   type: 'art' | 'equipment' | 'consumable';
-  value?: number; // Market value for artwork
+  value?: number;
   description: string;
   quantity: number;
 }
 
-// Market system types
 export interface ArtworkValue {
   baseValue: number;
   currentValue: number;
@@ -68,31 +62,6 @@ export interface MarketNotification {
   timestamp: number;
 }
 
-export interface Quest {
-  id: string;
-  name: string;
-  description: string;
-  checkComplete: (gameState: GameState) => boolean;
-  reward: {
-    exp?: number;
-    money?: number;
-    reputation?: number;
-    item?: {
-      [key: string]: number;
-    };
-  };
-  unlocksQuests?: string[];
-}
-
-export interface DialogueNode {
-  text: string;
-  options: {
-    text: string;
-    nextNode?: string;
-    action?: () => void;
-  }[];
-}
-
 export interface ObjectData {
   type: string;
   name: string;
@@ -103,27 +72,6 @@ export interface ObjectData {
     type: string;
     name: string;
     interaction: string;
-  };
-}
-
-export interface InteractionData {
-  type: string;
-  data: ObjectData;
-  x: number;
-  y: number;
-}
-
-export interface MapObject {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  data: {
-    sprite: string;
-    interaction: string;
-    name: string;
-    x: number;
-    y: number;
   };
 }
 
@@ -154,6 +102,15 @@ export interface GameMap {
   };
 }
 
+// Added floating text for battle animations
+export interface FloatingText {
+    id: number;
+    text: string;
+    color: string;
+    x: number;
+    y: number;
+}
+
 export interface BattleState {
   type: 'critic' | 'gallerist';
   player: {
@@ -169,6 +126,7 @@ export interface BattleState {
   };
   turn: 'player' | 'opponent';
   log: string[];
+  floatingTexts: FloatingText[];
 }
 
 export interface DialogueState {
@@ -176,9 +134,9 @@ export interface DialogueState {
   text: string;
   options: {
     text: string;
-    action: (func: () => void) => void;
+    action: () => void;
+    disabled?: boolean;
   }[];
-  scroll?: number;
 }
 
 export type MenuType =
@@ -203,6 +161,7 @@ export type MenuType =
   | 'curator'
   | 'shop'
   | null;
+
 export interface GameState {
   player: Player;
   currentMap: string;
@@ -219,23 +178,7 @@ export interface GameState {
   marketMultiplier: number;
   gameTick: number;
   pendingInteraction: PendingInteraction | null;
-  marketConditions: MarketConditions | null; // Added market conditions
-}
-
-export interface QuestDefinition {
-  id: string;
-  name: string;
-  description: string;
-  checkComplete: (gameState: GameState) => boolean;
-  reward: {
-    exp?: number;
-    money?: number;
-    reputation?: number;
-    item?: {
-      [key: string]: number;
-    };
-  };
-  unlocksQuests?: string[];
+  marketConditions: MarketConditions | null;
 }
 
 export interface BattleAction {
@@ -248,41 +191,10 @@ export interface BattleAction {
   description: string;
 }
 
-export interface PlayerTitle {
-  rep: number;
-  level: number;
-  title: string;
-}
-
-export interface SpriteData {
-  player: {
-    up: string[];
-    down: string[];
-    left: string[];
-    right: string[];
-  };
-  [key: string]: string | { [key: string]: string[] };
-}
-
-export interface NPCOption {
-  text: string;
-  cost: number;
-  reward: {
-    reputation?: number;
-    exp?: number;
-    money?: number;
-    artistic?: number;
-    networking?: number;
-    business?: number;
-    curating?: number;
-  };
-}
-
 export interface NPCData {
   name: string;
   type?: string;
   dialogue?: string;
-  options?: NPCOption[];
   reputationChange?: number;
   sale?: {
     id: string;
@@ -290,27 +202,10 @@ export interface NPCData {
     type: 'art' | 'equipment' | 'consumable';
     description: string;
     price: number;
-    value?: number; // Added value for market calculations
+    value?: number;
   };
-  x?: number; // Added position for market calculations
+  x?: number;
   y?: number;
-}
-
-export interface BaseMenuProps {
-  currentY: number;
-  gameState: GameState;
-  setGameState: (updater: (prev: GameState) => GameState) => void;
-  drawMenuButtonHelper: (text: string, action: () => void, color?: string, disabled?: boolean, pushY?: boolean, buttonX?: number, buttonWidth?: number) => void;
-  drawMenuTextHelper: (text: string, color?: string, size?: string, align?: CanvasTextAlign, isBold?: boolean) => void;
-  drawMenuTitleHelper: (title: string) => void;
-  showMessage: (title: string,
-    text: string,
-    options: DialogueOption[]
-  ) => void;
-}
-
-export interface CreateArtMenuProps extends BaseMenuProps {
-  createArt: (artType: string) => void;
 }
 
 export interface PendingInteraction {

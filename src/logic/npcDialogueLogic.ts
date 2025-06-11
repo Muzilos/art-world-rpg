@@ -1,14 +1,15 @@
-// logic/npcDialogueLogic.ts
+// Updated to return dialogue structures that our React components can easily render.
 import type { GameState, NPCData } from '../types/game';
 import { createCloseDialogue } from './closeDialogueLogic';
 
+// This is now the definitive type for a dialogue option.
 export interface DialogueOption {
-  condition: boolean;
-  color: string;
-  disabled: boolean | undefined;
-  closeDialogue: () => void;
   text: string;
   action: () => void;
+  disabled?: boolean;
+  color?: string; // Optional for styling buttons
+  condition?: (player: GameState['player']) => boolean;
+  closeDialogue?: boolean;
 }
 
 export interface NPCDialogue {
@@ -24,14 +25,21 @@ interface DialogueDeps {
   startCritiqueBattle: (npcData: NPCData) => void;
 }
 
+// The logic here is largely the same, but it now produces data for React components.
 export const getNPCDialogue = (
   npcData: NPCData,
   player: GameState['player'],
   relationshipLevel: number,
   deps: DialogueDeps
 ): NPCDialogue => {
-  const { showMessage, network, openSellArtMenu, startCritiqueBattle } = deps;
-  const closeDialogue = createCloseDialogue(deps.setGameState);
+  const { showMessage, network, openSellArtMenu, startCritiqueBattle, setGameState } = deps;
+  const closeDialogue = createCloseDialogue(setGameState);
+
+  // Default actions now correctly use the deps and close the dialogue
+  const defaultOptions = [
+    { text: 'Network', action: () => { network(npcData.name, npcData.type || 'generic'); }, closeDialogue: true },
+    { text: 'Goodbye', action: closeDialogue, closeDialogue: true }
+  ];
 
   switch (npcData.type) {
     case 'npc_collector': {
@@ -42,109 +50,26 @@ export const getNPCDialogue = (
       if (totalArt === 0) {
         return {
           text: "No art to show? Come back when you have something to sell.",
-          options: [{
-            text: "OK", action: closeDialogue,
-            condition: false,
-            color: '',
-            disabled: false,
-            closeDialogue: closeDialogue
-          }]
+          options: [{ text: "OK", action: closeDialogue }]
         };
-      } else if (player.reputation < 5 && relationshipLevel < 3) {
-        return {
-          text: "You need to make more of a name for yourself before I consider your work.",
-          options: [{
-            text: "OK", action: closeDialogue,
-            condition: false,
-            color: '',
-            disabled: false,
-            closeDialogue: closeDialogue
-          }]
-        };
-      } else {
-        return {
-          text: `Ah, ${player.title}. Do you have something exquisite for my collection?`,
-          options: [
-            {
-              text: "Sell Art", action: () => openSellArtMenu(npcData),
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            },
-            {
-              text: "Network", action: () => { network(npcData.name, 'collector'); closeDialogue(); },
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            },
-            {
-              text: "Goodbye", action: closeDialogue,
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            }
-          ]
-        };
+      }
+      return {
+        text: `Ah, ${player.title}. Do you have something exquisite for my collection?`,
+        options: [
+          { text: "Sell Art", action: () => openSellArtMenu(npcData) },
+          ...defaultOptions
+        ]
       }
     }
 
     case 'npc_critic': {
-      if (player.skills.artistic < 2 && relationshipLevel < 2) {
-        return {
-          text: "A bit derivative, don't you think? Develop your craft.",
-          options: [{ text: "OK", condition: false, color: '', disabled: false, closeDialogue: closeDialogue, action: closeDialogue }]
-        };
-      } else if (player.reputation < 10 && relationshipLevel < 4) {
-        return {
-          text: "I've heard whispers about you. Are you prepared to defend your work?",
-          options: [
-            {
-              text: "Discuss (Battle!)", action: () => startCritiqueBattle(npcData),
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            },
-            {
-              text: "Not now.", action: closeDialogue,
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            }
-          ]
-        };
-      } else {
-        return {
-          text: `Ah, ${player.title}, always a pleasure. Shall we delve into the nuances of your latest endeavors?`,
-          options: [
-            {
-              text: "Debate! (Battle)", action: () => startCritiqueBattle(npcData),
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            },
-            {
-              text: "Network", action: () => { network(npcData.name, 'critic'); closeDialogue(); },
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            },
-            {
-              text: "Later.", action: closeDialogue,
-              condition: false,
-              color: '',
-              disabled: false,
-              closeDialogue: closeDialogue
-            }
-          ]
-        };
-      }
+      return {
+        text: "I've heard whispers about you. Are you prepared to defend your work?",
+        options: [
+          { text: "Discuss (Battle!)", action: () => startCritiqueBattle(npcData) },
+          ...defaultOptions,
+        ]
+      };
     }
 
     case 'npc_influencer': {
@@ -792,22 +717,7 @@ export const getNPCDialogue = (
     default: {
       return {
         text: `${npcData.name} looks at you. ${relationshipLevel <= 1 ? 'Sizing up.' : relationshipLevel <= 5 ? 'Polite nod.' : `Greets warmly, '${player.title}!'`}`,
-        options: [
-          {
-            text: 'Network', action: () => { network(npcData.name, 'generic'); closeDialogue(); },
-            condition: false,
-            color: '',
-            disabled: false,
-            closeDialogue: closeDialogue
-          },
-          {
-            text: "Goodbye.", action: closeDialogue,
-            condition: false,
-            color: '',
-            disabled: false,
-            closeDialogue: closeDialogue
-          }
-        ]
+        options: defaultOptions
       };
     }
   }

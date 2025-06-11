@@ -177,45 +177,53 @@ export const handleInteraction = (interactionType: string, data: ObjectData, pla
 };
 
 export const updatePlayerPosition = (player: Player, isSprinting: boolean): Player => {
+  // If there's no path, return the player object as is.
   if (!player.path || player.path.length === 0) {
     return player;
   }
 
+  // Create a new player object to avoid direct state mutation.
+  const newPlayer = {
+    ...player,
+    path: [...player.path], // Also create a copy of the path array.
+  };
+
   const moveSpeed = isSprinting ? 4 : 2;
-  const nextPoint = player.path[0];
-  const dx = nextPoint.x - player.x;
-  const dy = nextPoint.y - player.y;
+  const nextPoint = newPlayer.path[0];
+  const dx = nextPoint.x - newPlayer.x;
+  const dy = nextPoint.y - newPlayer.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
 
   if (distance < moveSpeed) {
-    // Reached the next point
-    player.x = nextPoint.x;
-    player.y = nextPoint.y;
-    player.path.shift();
+    // Reached the next point on the path.
+    newPlayer.x = nextPoint.x;
+    newPlayer.y = nextPoint.y;
+    newPlayer.path.shift(); // Mutate the copied path array.
 
-    // Update facing direction based on movement
-    if (player.path.length > 0) {
-      const nextNextPoint = player.path[0];
-      const nextDx = nextNextPoint.x - player.x;
-      const nextDy = nextNextPoint.y - player.y;
+    // Update facing direction based on the next movement.
+    if (newPlayer.path.length > 0) {
+      const nextNextPoint = newPlayer.path[0];
+      const nextDx = nextNextPoint.x - newPlayer.x;
+      const nextDy = nextNextPoint.y - newPlayer.y;
       
       if (Math.abs(nextDx) > Math.abs(nextDy)) {
-        player.facing = nextDx > 0 ? 'right' : 'left';
+        newPlayer.facing = nextDx > 0 ? 'right' : 'left';
       } else {
-        player.facing = nextDy > 0 ? 'down' : 'up';
+        newPlayer.facing = nextDy > 0 ? 'down' : 'up';
       }
     }
 
-    // Update player sprite animation
-    player.sprite = (player.sprite + 1) % 4; // Assuming 4 frames of animation
+    // Update player sprite for animation.
+    newPlayer.sprite = (newPlayer.sprite + 1) % 2;
   } else {
-    // Move towards the next point
+    // Move towards the next point.
     const ratio = moveSpeed / distance;
-    player.x += dx * ratio;
-    player.y += dy * ratio;
+    newPlayer.x += dx * ratio;
+    newPlayer.y += dy * ratio;
   }
 
-  return player;
+  // Return the new, updated player object.
+  return newPlayer;
 };
 
 export const handleShopTransaction = (

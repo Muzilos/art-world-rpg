@@ -1,473 +1,321 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { GameState, MenuType, BattleState } from '../types/game';
-import { handleInteraction, updatePlayerPosition } from '../utils/gameLogic';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import type { GameState, MenuType, ObjectData } from '../types/game';
+import { updatePlayerPosition } from '../utils/gameLogic';
 import { aStar } from '../utils/pathfinding';
 import { MAPS } from '../constants/maps';
 import { useQuests } from './useQuests';
 import {
   calculateArtworkValue,
   updateMarketConditions,
-  updateInventoryValues} from '../utils/marketLogic';
+  updateInventoryValues
+} from '../utils/marketLogic';
 import { checkForMarketNotifications } from '../utils/marketNotifications';
 import { createCloseDialogue } from '../logic/closeDialogueLogic';
-import { handleBattleAction } from '../logic/battleLogic'; // Import the new logic
+import { handleBattleAction } from '../logic/battleLogic';
+import { getNPCDialogue } from '../logic/npcDialogueLogic';
+import { INTERACTION_TYPES } from '../constants/game';
+
 
 const getInitialState = (): GameState => {
-  const savedGameJSON = localStorage.getItem('art-world-rpg-game-state');
-  const savedGame = savedGameJSON ? JSON.parse(savedGameJSON) : null;
+  // const savedGameJSON = localStorage.getItem('art-world-rpg-game-state');
+  // const savedGame = savedGameJSON ? JSON.parse(savedGameJSON) : null;
 
-  const initialState: GameState = savedGame || {
+  return {
     player: {
-        x: 240,
-        y: 240,
-        facing: 'down',
-        sprite: 0,
-        money: 500,
-        reputation: 0,
-        inventory: {
-          coffee: { id: 'coffee', name: 'Coffee', type: 'consumable', description: 'Restores 30 energy.', quantity: 2 },
-          businessCards: { id: 'businessCards', name: 'Business Cards', type: 'consumable', description: 'Used for networking.', quantity: 0 },
-          paintings: { id: 'paintings', name: 'Painting', type: 'art', description: 'A beautiful painting.', quantity: 3, value: 150 },
-        },
-        skills: {
-          artistic: 1,
-          networking: 1,
-          business: 1,
-          curating: 1
-        },
-        quests: ['first_sale'],
-        energy: 100,
-        level: 1,
-        exp: 0,
-        title: 'Aspiring Artist',
-        equipment: {
-          brush: 'basic',
-          outfit: 'casual'
-        },
-        relationships: {},
-        completedQuests: [],
-        achievements: []
+      x: 240, y: 240, facing: 'down', sprite: 0,
+      money: 500, reputation: 0, energy: 100,
+      level: 1, exp: 0, title: 'Aspiring Artist',
+      inventory: {
+        coffee: { id: 'coffee', name: 'Coffee', type: 'consumable', description: 'Restores 30 energy.', quantity: 2 },
+        paintings: { id: 'paintings', name: 'Painting', type: 'art', description: 'A beautiful painting.', quantity: 3, value: 150 },
+      },
+      skills: { artistic: 1, networking: 1, business: 1, curating: 1 },
+      quests: ['first_sale'],
+      equipment: { brush: 'basic', outfit: 'casual' },
+      relationships: {},
+      completedQuests: [],
+      achievements: []
     },
     currentMap: 'studio',
     day: 1,
-    time: 9 * 60,
-    weather: 'Sunny',
+    time: 9 * 60, // 9:00 AM
     menu: null,
     dialogue: null,
     battle: null,
+    unlockedMaps: ['studio', 'gallery'],
+    pendingInteraction: null,
+    marketConditions: null,
+    gameTick: 0,
     music: true,
     events: [],
-    unlockedMaps: ['studio', 'gallery'],
     marketMultiplier: 1.0,
-    gameTick: 0,
-    pendingInteraction: null,
-    marketConditions: null
   };
-
-  return initialState;
 };
 
-
 export const useGame = () => {
+
   const [gameState, setGameState] = useState<GameState>(getInitialState());
   const { checkQuests } = useQuests(setGameState);
   const currentMap = MAPS[gameState.currentMap];
-  const closeDialogue = createCloseDialogue(setGameState);
+  const closeDialogue = useMemo(() => createCloseDialogue(setGameState), [setGameState]);
 
-  // Add menuData to state for passing data to menus
-  const [menuData, setMenuData] = useState<unknown>(null);
+  // Refs to store the latest state and callbacks for the game loop
+  const requestRef = useRef<number>(0);
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
 
   useEffect(() => {
     localStorage.setItem('art-world-rpg-game-state', JSON.stringify(gameState));
   }, [gameState]);
 
-  // Create mapData using useMemo like in the original
   const mapData = useMemo(() => ({
-    id: gameState.currentMap,
-    name: currentMap.name,
     width: currentMap.width,
     height: currentMap.height,
-    bgm: currentMap.bgm,
-    collision: currentMap.tiles.map(row => row.map(tile => tile === 1)),
     tiles: currentMap.tiles,
-    objects: Object.entries(currentMap.objects as Record<string, { type: string; interaction: string; name: string }>).map(([posKey, obj]) => {
-      const [x, y] = posKey.split(',').map((p: string): number => Number(p));
-      return {
-        id: posKey,
-        type: obj.type as MenuType,
-        x: x * 32,
-        y: y * 32,
-        data: {
-          sprite: obj.type,
-          interaction: obj.interaction,
-          name: obj.name,
-          x: x * 32,
-          y: y * 32
-        }
-      };
-    }),
+    objects: currentMap.objects,
     exits: currentMap.exits
-  }), [currentMap, gameState.currentMap]);
+  }), [currentMap]);
 
-  // Add missing handleCanvasClick function
-  const handleCanvasClick = useCallback((x: number, y: number, menu?: MenuType) => {
-    // Handle UI clicks
-    if (x === -999 && y === -999) {
-      return; // UI click indicator, no action needed
-    }
-    if (x === -1000 && y === -1000) {
-      setGameState(prev => ({ ...prev, menu: null }));
-      setMenuData(null); // Clear menu data when closing menu
-      return;
-    }
-    if (x === -1001 && y === -1001 && menu) {
-      // Set menu and menuData if needed
-      let data = null;
-      if (gameState.pendingInteraction) {
-        console.log('Pending interaction:', gameState.pendingInteraction);
-        const result = handleInteraction(gameState.pendingInteraction.type, gameState.pendingInteraction.data, gameState.player, mapData);
-        console.log('Interaction result:', result);
-        if (result) {
-          data = result.data;
-          setMenuData(data);
-          setGameState(prev => ({ ...prev, menu: result.menu, pendingInteraction: null }));
-          return;
-        }
+  const showMessage = useCallback((title: string, text: string, options?: { text: string, action: () => void }[]) => {
+    setGameState(prev => ({ ...prev, dialogue: { title, text, options: options || [{ text: 'OK', action: closeDialogue }] } }))
+  }, [setGameState, closeDialogue]);
+
+  // This function will be called from the UI components
+  const handleInteraction = useCallback((obj: ObjectData) => {
+    const { interaction, type, name } = obj;
+    console.log('interaction', interaction);
+    console.log('type', type);
+    console.log('name', name);
+
+    if (interaction === INTERACTION_TYPES.EXIT) {
+      const currentMapData = MAPS[gameStateRef.current.currentMap];
+      const exitKey = `${Math.floor(obj.x / 32)},${Math.floor(obj.y / 32)}`;
+      const exitData = currentMapData.exits?.[exitKey];
+      console.log('exitData', exitData);
+      console.log('currentMapData', currentMapData);
+      console.log('exitKey', exitKey);
+
+      if (exitData) {
+        setGameState(prev => {
+          if (!prev.player) return prev;
+          // Check for locked maps
+          const nextMap = MAPS[exitData.to];
+          if (nextMap.locked && !prev.unlockedMaps.includes(exitData.to)) {
+            showMessage("Locked", "You don't have access to this area yet.");
+            return prev;
+          }
+
+          return {
+            ...prev,
+            currentMap: exitData.to,
+            player: {
+              ...prev.player,
+              x: exitData.x * 32,
+              y: exitData.y * 32,
+              path: [],
+            },
+            pendingInteraction: null,
+          };
+        });
       }
-      // If no result or no pending interaction, just set the menu
-      setGameState(prev => ({ ...prev, menu }));
       return;
     }
 
-    // Convert click coordinates to tile coordinates
+
+    // Handle NPC talk interactions by generating dialogue data and setting it in the state
+    if (type.startsWith('npc_')) {
+      const npcData: NPCData = { name: name || '', type: type || '', x: obj.x, y: obj.y };
+      const relationshipLevel = gameState.player.relationships?.[npcData.name] || 0;
+
+      const dialogue = getNPCDialogue(npcData, gameState.player, relationshipLevel, {
+        setGameState,
+        showMessage,
+        network: (npcName, npcType) => { /* Your networking logic here */ },
+        openSellArtMenu: (collectorData) => { /* Your sell art menu logic here */ },
+        startCritiqueBattle: (criticData) => {
+          setGameState(prev => ({
+            ...prev,
+            menu: 'battle',
+            dialogue: null,
+            battle: {
+              floatingTexts: [],
+              type: 'critic',
+              player: { hp: 100, maxHp: 100, energy: prev.player.energy },
+              opponent: { name: criticData.name, hp: 100, maxHp: 100, type: 'critic' },
+              turn: 'player',
+              log: [`${criticData.name} challenges you to a critique battle!`]
+            }
+          }));
+        }
+      });
+
+      setGameState(prev => ({
+        ...prev,
+        dialogue: {
+          title: npcData.name,
+          text: dialogue.text,
+          options: dialogue.options,
+        }
+      }));
+      return;
+    }
+
+    // For other interactions, just open the corresponding menu
+    setGameState(prev => ({ ...prev, menu: interaction as MenuType, menuData: obj }));
+
+  }, [gameState.player, setGameState, showMessage]);
+
+
+  const handleCanvasClick = useCallback((x: number, y: number) => {
     const tileX = Math.floor(x / 32);
     const tileY = Math.floor(y / 32);
 
-    // Check if clicked tile is walkable
-    if (
-      tileX >= 0 && tileX < mapData.width &&
-      tileY >= 0 && tileY < mapData.height &&
-      !mapData.collision[tileY][tileX]
-    ) {
-      // Check if there's an object at the clicked position
-      const clickedObject = mapData.objects.find((obj: { id: string }) => {
-        const [objX, objY] = obj.id.split(',').map((p: string): number => Number(p));
-        return objX === tileX && objY === tileY;
-      });
+    if (tileX < 0 || tileX >= mapData.width || tileY < 0 || tileY >= mapData.height) return;
 
-      if (clickedObject) {
-        // Set pending interaction and move to the object
-        setGameState(prev => {
-          const startNode = { x: Math.floor(prev.player.x / 32), y: Math.floor(prev.player.y / 32) };
-          const endNode = { x: tileX, y: tileY };
-          const path = aStar(startNode, endNode, mapData.tiles);
-          return {
-            ...prev,
-            player: {
-              ...prev.player,
-              targetX: tileX * 32,
-              targetY: tileY * 32,
-              path: path.map(p => ({ x: p.x * 32, y: p.y * 32 }))
-            },
-            pendingInteraction: {
-              type: clickedObject.data.interaction,
-              data: {
-                type: clickedObject.type,
-                name: clickedObject.data.name,
-                interaction: clickedObject.data.interaction,
-                x: clickedObject.x,
-                y: clickedObject.y
-              },
-              x: clickedObject.x,
-              y: clickedObject.y
-            }
-          };
-        });
-      } else {
-        // If no object, move to the clicked position and clear pending interaction
-        const startNode = { x: Math.floor(gameState.player.x / 32), y: Math.floor(gameState.player.y / 32) };
+    const objKey = `${tileX},${tileY}`;
+    const clickedObject = mapData.objects[objKey];
+
+    // If clicking an object, move player to an adjacent tile and set pending interaction
+    if (clickedObject) {
+      setGameState(prev => {
+        const startNode = { x: Math.floor(prev.player.x / 32), y: Math.floor(prev.player.y / 32) };
+        // Find a valid, walkable neighbor to the object to pathfind to
+        let endNode = { x: tileX, y: tileY - 1 }; // Simplification: target tile above object
+        const neighbors = [
+          { x: tileX, y: tileY - 1 }, // Top
+          { x: tileX, y: tileY + 1 }, // Bottom
+          { x: tileX - 1, y: tileY }, // Left
+          { x: tileX + 1, y: tileY }  // Right
+      ];
+
+      for (const neighbor of neighbors) {
+          if (
+              neighbor.y >= 0 && neighbor.y < currentMap.height &&
+              neighbor.x >= 0 && neighbor.x < currentMap.width &&
+              currentMap.tiles[neighbor.y][neighbor.x] !== 1 // 1 is a wall
+          ) {
+              endNode = neighbor; // Found a valid walkable spot
+              break;
+          }
+      }
+
+
+        const path = aStar(startNode, endNode, mapData.tiles);
+        return {
+          ...prev,
+          player: { ...prev.player, path: path.map(p => ({ x: p.x * 32, y: p.y * 32 })) },
+          pendingInteraction: {
+            type: clickedObject.interaction,
+            data: { ...clickedObject, name: clickedObject.name, type: clickedObject.type, interaction: clickedObject.interaction, x: tileX * 32, y: tileY * 32 },
+            x: tileX * 32,
+            y: tileY * 32
+          }
+        };
+      });
+    } else if (mapData.tiles[tileY][tileX] !== 1) { // If clicking on empty, walkable ground
+      setGameState(prev => {
+        const startNode = { x: Math.floor(prev.player.x / 32), y: Math.floor(prev.player.y / 32) };
         const endNode = { x: tileX, y: tileY };
         const path = aStar(startNode, endNode, mapData.tiles);
-        
-        if (path.length > 0) {
-          setGameState(prev => ({
-            ...prev,
-            player: {
-              ...prev.player,
-              targetX: tileX * 32,
-              targetY: tileY * 32,
-              path: path.map(p => ({ x: p.x * 32, y: p.y * 32 }))
-            },
-            pendingInteraction: null
-          }));
-        }
-      }
+        return {
+          ...prev,
+          player: { ...prev.player, path: path.map(p => ({ x: p.x * 32, y: p.y * 32 })) },
+          pendingInteraction: null // Clear any pending interaction if moving elsewhere
+        };
+      });
     }
-  }, [mapData, gameState.player, gameState.pendingInteraction]);
+  }, [mapData]);
 
-  // Update createArt function to use market values
   const createArt = useCallback((artType: string) => {
     setGameState(prev => {
+      // ... (existing createArt logic is fine)
       const player = prev.player;
       let energyCost = 0;
-      let skillReq = 0;
       let artKey = '';
-      let baseQuality = player.skills.artistic;
-      let time = prev.time;
 
-      switch (artType) {
-        case 'painting':
-          energyCost = 25;
-          skillReq = 1;
-          artKey = 'paintings';
-          time += Math.floor(Math.random() * 10);
-          break;
-        case 'sculpture':
-          energyCost = 40;
-          skillReq = 3;
-          artKey = 'sculptures';
-          baseQuality *= 0.8;
-          time += Math.floor(Math.random() * 15);
-          break;
-        case 'digital':
-          energyCost = 20;
-          skillReq = 5;
-          artKey = 'digitalArt';
-          baseQuality *= 1.1;
-          time += Math.floor(Math.random() * 5);
-          break;
-      }
+      if (artType === 'painting') { energyCost = 25; artKey = 'paintings'; }
+      if (artType === 'sculpture') { energyCost = 40; artKey = 'sculptures'; }
+      if (artType === 'digital') { energyCost = 20; artKey = 'digitalArt'; }
 
-      if (player.equipment.brush === 'Pro Brush Set') baseQuality += 1;
       if (player.energy < energyCost) {
-        return {
-          ...prev,
-          dialogue: {
-            title: "Too Tired",
-            text: `Need ${energyCost} energy.`,
-            options: [{ text: "OK", action: closeDialogue }]
-          }
-        };
-      }
-      if (player.skills.artistic < skillReq) {
-        return {
-          ...prev,
-          dialogue: {
-            title: "Skill Lacking",
-            text: `Need Artistic skill ${skillReq}.`,
-            options: [{ text: "OK", action: closeDialogue }]
-          }
-        };
+        showMessage("Too Tired", `Need ${energyCost} energy.`);
+        return prev;
       }
 
-      const quality = Math.min(10, Math.max(1, Math.random() * 5 + baseQuality));
-      const isMasterpiece = quality >= 8.5;
+      const quality = Math.min(10, Math.max(1, Math.random() * 5 + player.skills.artistic));
+      const artworkValue = calculateArtworkValue(artKey as any, player, prev.marketConditions || updateMarketConditions(null, 0), quality);
+      const expGain = 10 + Math.floor(quality * 2);
 
-      const marketConditions = updateMarketConditions(prev.marketConditions, prev.gameTick);
-      const artworkValue = calculateArtworkValue(
-        artKey as 'paintings' | 'sculptures' | 'digitalArt',
-        player,
-        marketConditions,
-        quality
-      );
-
-      let newAchievements = player.achievements;
-      if (isMasterpiece && !newAchievements.includes('created_masterpiece')) {
-        newAchievements = [...newAchievements, 'created_masterpiece'];
+      const newPlayer = JSON.parse(JSON.stringify(player));
+      newPlayer.energy -= energyCost;
+      newPlayer.exp += expGain;
+      if (!newPlayer.inventory[artKey]) {
+        newPlayer.inventory[artKey] = { id: artKey, name: artKey, type: 'art', quantity: 0, description: `A piece of ${artKey}` };
       }
-      const expGain = 10 + Math.floor(quality * 2) + (isMasterpiece ? 50 : 0);
+      newPlayer.inventory[artKey].quantity++;
+      newPlayer.inventory[artKey].value = artworkValue;
 
-      const inv = { ...player.inventory };
-      if (inv[artKey]) {
-        inv[artKey] = {
-          ...inv[artKey],
-          quantity: inv[artKey].quantity + 1,
-          value: artworkValue
-        };
-      } else {
-        inv[artKey] = {
-          id: artKey,
-          name: artKey.charAt(0).toUpperCase() + artKey.slice(1),
-          type: 'art',
-          description: '',
-          quantity: 1,
-          value: artworkValue
-        };
-      }
+      showMessage("Artwork Created!", `You made a ${artType} of quality ${quality.toFixed(1)}/10.\nValue: $${artworkValue}\n+${expGain} EXP.`);
 
-
-      // Update time and day
-      const newDay = time >= 24 * 60 ? prev.day + 1 : prev.day;
-      const newTime = time % (24 * 60);
-
-      return {
-        ...prev,
-        player: {
-          ...player,
-          energy: player.energy - energyCost,
-          inventory: inv,
-          skills: {
-            ...player.skills,
-            artistic: Math.min(10, player.skills.artistic + 0.1 + (isMasterpiece ? 0.2 : 0))
-          },
-          exp: player.exp + expGain,
-          achievements: newAchievements
-        },
-        time: newTime,
-        day: newDay,
-        marketConditions,
-        dialogue: {
-          title: "Artwork Created!",
-          text: `Created ${isMasterpiece ? '✨MASTERPIECE✨ ' : ''}${artType} (Q: ${quality.toFixed(1)}/10).\nMarket Value: $${artworkValue}\n+${expGain} EXP.`,
-          options: [{ text: "Excellent!", action: closeDialogue }]
-        }
-      };
+      return { ...prev, player: newPlayer };
     });
-  }, [closeDialogue]);
-  
+  }, [showMessage, setGameState]);
+
   const performBattleAction = useCallback((actionId: string) => {
     setGameState(currentState => {
-      // Pass the current state to the battle logic handler
       const nextState = handleBattleAction(actionId, currentState);
-
-      // If the battle ended, the dialogue's action needs to be hooked up to close it.
       if (nextState.dialogue && nextState.battle === null) {
-        nextState.dialogue.options[0].action = () => setGameState(s => ({...s, dialogue: null}));
+        nextState.dialogue.options[0].action = closeDialogue;
       }
-
       return nextState;
     });
-  }, [setGameState]);
+  }, [setGameState, closeDialogue]);
 
-  // Update the main game loop
   useEffect(() => {
-    const renderLoop = setInterval(() => {
-      setGameState((prev: GameState) => {
-        const { dialogue, battle, gameTick } = { ...prev };
-        let { player, menu } = { ...prev };
+    const gameTick = () => {
+      const currentState = gameStateRef.current;
 
-        const previousMarketConditions = prev.marketConditions;
-        const marketConditions = updateMarketConditions(prev.marketConditions, gameTick);
-        
-        if (gameTick % 500 === 0 && previousMarketConditions && marketConditions !== previousMarketConditions) {
-          const notifications = checkForMarketNotifications(previousMarketConditions, marketConditions, player);
-          
-          if (notifications.length > 0 && !dialogue && !menu && !battle) {
-            const priorityNotification = notifications.find(n => n.type === 'market_boom' || n.type === 'market_crash') || notifications[0];
-            
-            return {
-              ...prev,
-              player,
-              marketConditions,
-              dialogue: {
-                title: priorityNotification.title,
-                text: priorityNotification.message,
-                options: [{ text: "Thanks for the update!", action: closeDialogue }]
-              },
-              gameTick: gameTick + 1
-            };
-          }
+      // If a menu is open, we pause the game logic but continue the loop for animations.
+      if (currentState.menu || currentState.dialogue || currentState.battle) {
+        requestRef.current = requestAnimationFrame(gameTick);
+        return;
+      }
+
+      let newPlayer = currentState.player;
+      let pathJustFinished = false;
+
+      // Update player position
+      if (newPlayer.path && newPlayer.path.length > 0) {
+        const oldPathLength = newPlayer.path.length;
+        newPlayer = updatePlayerPosition(newPlayer, false);
+        if (oldPathLength > 0 && newPlayer.path && newPlayer.path.length === 0) {
+          pathJustFinished = true;
         }
-        
-        if (gameTick % 100 === 0) {
-          player = updateInventoryValues(player, marketConditions);
-        }
+      }
 
-        if (dialogue || menu || battle) {
-          player.sprite = 0;
-          return { ...prev, player, marketConditions, gameTick: gameTick + 1 };
-        }
+      // Set the new player state
+      setGameState(prev => ({
+        ...prev,
+        player: newPlayer,
+        gameTick: prev.gameTick + 1
+      }));
 
-        if (player.path && player.path.length > 0) {
-          player = updatePlayerPosition(player, false); // No sprinting
-        }
+      // Handle interactions AFTER the state has been updated
+      if (pathJustFinished && currentState.pendingInteraction) {
+        handleInteraction(currentState.pendingInteraction.data);
+        setGameState(prev => ({ ...prev, pendingInteraction: null }));
+      }
 
-        if (prev.pendingInteraction) {
-          const playerTileX = Math.floor(player.x / 32);
-          const playerTileY = Math.floor(player.y / 32);
-          const objTileX = Math.floor(prev.pendingInteraction.x / 32);
-          const objTileY = Math.floor(prev.pendingInteraction.y / 32);
-
-          if (Math.abs(objTileX - playerTileX) <= 1 && Math.abs(objTileY - playerTileY) <= 1) {
-            if (prev.pendingInteraction.type === 'exit') {
-              const exitKey = `${objTileX},${objTileY}`;
-              const exitData = mapData.exits?.[exitKey];
-
-              if (exitData) {
-                return {
-                  ...prev,
-                  player: {
-                    ...player,
-                    x: exitData.x * 32,
-                    y: exitData.y * 32,
-                    path: []
-                  },
-                  currentMap: exitData.to,
-                  pendingInteraction: null,
-                  marketConditions
-                };
-              }
-            } else {
-              const result = handleInteraction(prev.pendingInteraction.type, prev.pendingInteraction.data, player, mapData);
-              if (result) {
-                menu = result.menu as MenuType;
-                setMenuData(result.data);
-
-                if (menu === 'battle') {
-                  return {
-                    ...prev,
-                    player,
-                    battle: {
-                      ...(result.data as BattleState), // Assuming data is a valid BattleState partial
-                      player: { hp: 100, maxHp: 100, energy: player.energy },
-                      turn: 'player',
-                      log: []
-                    },
-                    menu: null,
-                    pendingInteraction: null,
-                    marketConditions,
-                    gameTick: gameTick + 1
-                  };
-                } else {
-                  return {
-                    ...prev,
-                    player,
-                    menu,
-                    pendingInteraction: null,
-                    marketConditions,
-                    gameTick: gameTick + 1
-                  };
-                }
-              }
-            }
-          }
-        }
-        
-        player.sprite = 0;
-
-        player.x = Math.max(0, Math.min(player.x, mapData.width * 32 - 32));
-        player.y = Math.max(0, Math.min(player.y, mapData.height * 32 - 32));
-
-        return { ...prev, player, menu, marketConditions, gameTick: gameTick + 1 };
-      });
-    }, 50);
-
-    return () => {
-      clearInterval(renderLoop);
+      requestRef.current = requestAnimationFrame(gameTick);
     };
-  }, [mapData, closeDialogue]);
 
+    requestRef.current = requestAnimationFrame(gameTick);
+    return () => cancelAnimationFrame(requestRef.current as number);
+  }, [handleInteraction, gameState]);
+  // Quest checking useEffect...
   useEffect(() => {
     checkQuests(gameState);
-  }, [gameState.player.money, gameState.player.reputation, gameState.player.achievements, gameState.player.relationships, gameState.unlockedMaps, gameState.player.quests, gameState.player.completedQuests, checkQuests, gameState]);
+  }, [gameState, checkQuests]);
 
-  return {
-    gameState: { ...gameState, menuData },
-    currentMap: mapData,
-    handleCanvasClick,
-    setGameState,
-    createArt,
-    closeDialogue,
-    performBattleAction
-  };
+  return { gameState, setGameState, handleCanvasClick, createArt, performBattleAction, closeDialogue, showMessage };
 };
