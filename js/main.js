@@ -1,9 +1,26 @@
 // === UTILITY FUNCTIONS ===
+/**
+ * Checks if two sets of coordinates are adjacent (including diagonals).
+ * @param {number} x1 - X-coordinate of the first point.
+ * @param {number} y1 - Y-coordinate of the first point.
+ * @param {number} x2 - X-coordinate of the second point.
+ * @param {number} y2 - Y-coordinate of the second point.
+ * @returns {boolean} - True if adjacent, false otherwise.
+ */
 function isAdjacent(x1, y1, x2, y2) {
+  // Returns true if the absolute difference in x is 0 or 1, AND
+  // the absolute difference in y is 0 or 1, AND
+  // they are not the exact same tile (i.e., not standing on self).
   return Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1 && !(x1 === x2 && y1 === y2);
 }
 
+/**
+ * Determines the appropriate dialogue state for a character based on quest progress.
+ * @param {object} character - The character object.
+ * @returns {string} - The key for the current dialogue state.
+ */
 function getDialogueState(character) {
+  // Old Man quest for chicken
   if (character.id === 'old_man') {
     const questStatus = gameState.quests.chickenQuest;
     const hasChicken = gameState.player.backpack.includes('chicken');
@@ -11,7 +28,8 @@ function getDialogueState(character) {
     if (questStatus === 'completed' && hasChicken) return 'quest_hand_over';
     if (questStatus === 'accepted' || (questStatus === 'completed' && !hasChicken)) return 'quest_in_progress';
   }
-  
+
+  // Merchant quest for crystal
   if (character.id === 'merchant') {
     const questStatus = gameState.quests.crystalQuest;
     const hasCrystal = gameState.player.backpack.includes('crystal');
@@ -19,88 +37,145 @@ function getDialogueState(character) {
     if (questStatus === 'completed' && hasCrystal) return 'quest_hand_over';
     if (questStatus === 'accepted' || (questStatus === 'completed' && !hasCrystal)) return 'quest_in_progress';
   }
-  
+
+  // New Quest: Mysterious Note
+  if (character.id === 'mysterious_figure') {
+    const questStatus = gameState.quests.mysteriousNoteQuest;
+    const hasNote = gameState.player.backpack.includes('mysterious_note');
+    if (questStatus === 'rewarded') return 'quest_rewarded';
+    if (questStatus === 'completed' && hasNote) return 'quest_hand_over';
+    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasNote)) return 'quest_in_progress';
+  }
+
+  // Default state if no specific quest dialogue applies
   return 'start';
 }
 
 // === GAME LOOP ===
-requestAnimationFrame(gameLoop);
+let lastTime = 0; // Timestamp of the previous frame
 
-let lastTime = 0;
-
+/**
+ * The main game loop, called continuously using requestAnimationFrame.
+ * @param {DOMHighResTimeStamp} timestamp - The current time provided by requestAnimationFrame.
+ */
 function gameLoop(timestamp) {
-  const deltaTime = timestamp - lastTime;
-  lastTime = timestamp;
-  update(deltaTime);
-  draw();
-  requestAnimationFrame(gameLoop);
+  const deltaTime = timestamp - lastTime; // Calculate time elapsed since last frame
+  lastTime = timestamp; // Update lastTime for the next frame
+
+  update(deltaTime); // Update game state
+  draw(); // Redraw game elements
+  requestAnimationFrame(gameLoop); // Request next frame
 }
 
+/**
+ * Updates the game state based on elapsed time.
+ * @param {number} deltaTime - The time elapsed since the last update in milliseconds.
+ */
 function update(deltaTime) {
+  // Decrease the player's movement timer
   gameState.player.moveTimer -= deltaTime;
-  
+
+  // If the player has a path and the move timer has expired
   if (gameState.player.path.length > 0 && gameState.player.moveTimer <= 0) {
-    gameState.player.moveTimer = gameState.player.speed;
-    const nextStep = gameState.player.path.shift();
+    gameState.player.moveTimer = gameState.player.speed; // Reset move timer
+    const nextStep = gameState.player.path.shift(); // Get the next step in the path
+
+    // Move the player to the next tile
     gameState.player.x = nextStep.x;
     gameState.player.y = nextStep.y;
-    checkTransition();
+
+    checkTransition(); // Check if the player has moved onto a transition tile
   }
 }
 
+/**
+ * Checks if the player has moved onto a transition tile and updates the map accordingly.
+ */
 function checkTransition() {
-  const map = maps[gameState.currentMap];
+  const map = maps[gameState.currentMap]; // Get the current map data
+  // Find if the player's current position matches any transition point on the map
   const transition = map.transitions.find(t => t.x === gameState.player.x && t.y === gameState.player.y);
-  
+
   if (transition) {
+    // If a transition is found, update the game state to the target map and position
     gameState.currentMap = transition.targetMap;
     gameState.player.x = transition.targetX;
     gameState.player.y = transition.targetY;
-    gameState.player.path = [];
-    gameState.clickMarker.x = -1;
+    gameState.player.path = []; // Clear the player's path
+    gameState.clickMarker.x = -1; // Reset click marker
     gameState.clickMarker.y = -1;
   }
 }
 
 // === EVENT LISTENERS ===
+/**
+ * Initializes all necessary event listeners for user interaction.
+ */
 function initializeEventListeners() {
+  // Event listener for closing the dialogue box
   document.getElementById('closeDialogue').addEventListener('click', closeDialogue);
-  
+
+  // Event listener for clicks on the game canvas
   canvas.addEventListener('click', (event) => {
+    // If dialogue box is open, prevent further interaction with the canvas
     if (!document.getElementById('dialogueBox').classList.contains('hidden')) return;
-    
+
+    // Get canvas position and calculate clicked tile coordinates
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     let tileX = Math.floor(mouseX / TILE_SIZE);
     let tileY = Math.floor(mouseY / TILE_SIZE);
-    
-    // Update click marker
+
+    // Update click marker to show where the user clicked
     gameState.clickMarker.x = tileX;
     gameState.clickMarker.y = tileY;
-    gameState.clickMarker.type = 'normal';
-    
-    // Check for character interaction (must be adjacent)
-    const character = (gameState.characters[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
+    gameState.clickMarker.type = 'normal'; // Default type
+
+    const map = maps[gameState.currentMap]; // Get current map data
+
+    // Check for character interaction
+    const character = (characters[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
     if (character) {
+      gameState.clickMarker.type = 'interactive'; // Mark as interactive
+      // If the character is adjacent, show dialogue. Otherwise, move to an adjacent tile.
       if (isAdjacent(gameState.player.x, gameState.player.y, tileX, tileY)) {
-        gameState.clickMarker.type = 'interactive';
         const dialogueState = getDialogueState(character);
         showDialogue(character, dialogueState);
-        return;
       } else {
-        gameState.clickMarker.type = 'interactive';
+        // Find the closest adjacent walkable tile to the character for movement
+        const adjacentTiles = getAdjacentWalkableTiles(tileX, tileY, map);
+        if (adjacentTiles.length > 0) {
+          const closestTile = adjacentTiles.sort((a, b) => {
+            return heuristic(gameState.player, a) - heuristic(gameState.player, b);
+          })[0]; // Sort by heuristic (distance) and pick the closest
+
+          const path = aStar({ x: gameState.player.x, y: gameState.player.y }, closestTile, map);
+          if (path.length > 0) {
+            path.shift(); // Remove starting position
+            gameState.player.path = path;
+            gameState.player.moveTimer = 0;
+          }
+        }
       }
+      return; // Stop further processing after character interaction
     }
-    
-    // Check for transition markers
-    const map = maps[gameState.currentMap];
+
+    // Check for transition markers (doors)
     const transition = map.transitions.find(t => t.x === tileX && t.y === tileY);
     if (transition) {
-      gameState.clickMarker.type = 'interactive';
+      gameState.clickMarker.type = 'interactive'; // Mark as interactive
+      // If a transition tile is clicked, the player should move directly onto it.
+      const path = aStar({ x: gameState.player.x, y: gameState.player.y }, { x: tileX, y: tileY }, map);
+      if (path.length > 0) {
+        path.shift(); // Remove starting position (player's current tile)
+        gameState.player.path = path;
+        gameState.player.moveTimer = 0;
+      }
+      return; // Stop further processing after transition interaction
     }
-    
-    // Movement
+
+    // If no interactive element is clicked, move to the clicked tile directly
     const path = aStar({ x: gameState.player.x, y: gameState.player.y }, { x: tileX, y: tileY }, map);
     if (path.length > 0) {
       path.shift(); // Remove starting position
@@ -110,5 +185,42 @@ function initializeEventListeners() {
   });
 }
 
-initializeEventListeners();
-requestAnimationFrame(gameLoop);
+/**
+ * Returns an array of walkable tiles adjacent to a given target tile.
+ * This is used to find a tile for the player to move to before interacting.
+ * @param {number} targetX - X-coordinate of the target interactive tile.
+ * @param {number} targetY - Y-coordinate of the target interactive tile.
+ * @param {object} map - The current map object.
+ * @returns {Array<object>} - An array of adjacent walkable tile coordinates {x, y}.
+ */
+function getAdjacentWalkableTiles(targetX, targetY, map) {
+  const walkableTiles = [];
+  // Iterate through all 8 possible adjacent tiles
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      // Exclude the target tile itself
+      if (dx === 0 && dy === 0) continue;
+
+      const newX = targetX + dx;
+      const newY = targetY + dy;
+
+      // Check if the new coordinates are within map bounds
+      if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height) {
+        const tileIndex = newY * map.width + newX;
+        // Check if the tile is walkable (not a wall or obstacle)
+        // Assuming tile types 1 and 2 are unwalkable (walls, trees etc.)
+        if (map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2) {
+          walkableTiles.push({ x: newX, y: newY });
+        }
+      }
+    }
+  }
+  return walkableTiles;
+}
+
+
+// Start the game loop when the window loads
+window.onload = function () {
+  initializeEventListeners();
+  requestAnimationFrame(gameLoop);
+}

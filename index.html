@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,13 +9,17 @@
   <style>
     body {
       background-color: #1a202c;
+      /* Tailwind gray-900 */
       color: #e2e8f0;
+      /* Tailwind gray-200 */
       font-family: 'Courier New', Courier, monospace;
     }
 
     canvas {
       background-color: #2d3748;
+      /* Tailwind gray-800 */
       border: 2px solid #4a5568;
+      /* Tailwind gray-600 */
       border-radius: 0.5rem;
     }
 
@@ -38,12 +43,20 @@
       class="mt-4 px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 hidden">Close</button>
   </div>
 
+  <!-- Game Scripts -->
+  <!-- Items script should define any game items, so it should be loaded early if you expand items later -->
   <script src="js/items.js"></script>
+  <!-- State should be loaded before anything that depends on game state -->
   <script src="js/state.js"></script>
+  <!-- Maps defines the game world structure -->
   <script src="js/maps.js"></script>
+  <!-- Pathfinding provides the A* algorithm -->
   <script src="js/pathfinding.js"></script>
+  <!-- Drawing handles all rendering to the canvas -->
   <script src="js/drawing.js"></script>
+  <!-- UI handles dialogue and other user interface elements -->
   <script src="js/ui.js"></script>
+  <!-- Main contains the game loop and event listeners, should be loaded last -->
   <script src="js/main.js"></script>
 
 </body>
