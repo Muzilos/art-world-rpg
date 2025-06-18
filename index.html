@@ -1,82 +1,51 @@
-<!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D RPG Engine</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-color: #1a202c;
-            color: #e2e8f0;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        canvas {
-            background-color: #2d3748;
-            border: 2px solid #4a5568;
-            border-radius: 0.5rem;
-        }
-        .dialogue-box {
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .stats-panel {
-            top: 20px;
-            right: 20px;
-            transition: all 0.3s ease-in-out;
-        }
-        .stats-content {
-            max-height: 500px; /* Set a max-height for transition */
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
-            opacity: 1;
-        }
-        .stats-content.collapsed {
-            max-height: 0;
-            opacity: 0;
-            margin-top: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced 2D RPG Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #1a202c;
+      color: #e2e8f0;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    canvas {
+      background-color: #2d3748;
+      border: 2px solid #4a5568;
+      border-radius: 0.5rem;
+    }
+
+    .dialogue-box {
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  </style>
 </head>
+
 <body class="flex flex-col items-center justify-center h-screen p-4">
-    <h1 class="text-3xl font-bold mb-4">My RPG</h1>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    
-    <div id="dialogueBox" class="absolute dialogue-box w-11/12 md:w-3/4 bg-gray-800 border-2 border-gray-600 rounded-lg p-4 hidden">
-        <p id="dialogueText" class="text-lg"></p>
-        <div id="dialogueOptions" class="mt-4 flex flex-col space-y-2"></div>
-        <button id="closeDialogue" class="mt-4 px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 hidden">Close</button>
-    </div>
+  <h1 class="text-3xl font-bold mb-4">Enhanced RPG</h1>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <div class="stats-panel absolute bg-gray-800 border-2 border-gray-600 rounded-lg p-4">
-        <div class="flex justify-between items-center cursor-pointer" id="statsHeader">
-            <h2 class="text-xl font-bold">Player Stats</h2>
-            <span id="statsToggle" class="px-2">[ - ]</span>
-        </div>
-        <div id="statsContent" class="stats-content mt-2">
-            <p>Level: <span id="playerLevel">1</span></p>
-            <p>HP: <span id="playerHP">100</span> / <span id="playerMaxHP">100</span></p>
-            <p>Attack: <span id="playerAttack">10</span></p>
-            <p>Defense: <span id="playerDefense">5</span></p>
-            <p>XP: <span id="playerXP">0</span> / <span id="xpToNextLevel">100</span></p>
-            <button id="levelUpButton" class="mt-4 px-4 py-2 bg-green-500 rounded hover:bg-green-700 hidden">Level Up!</button>
-        </div>
-    </div>
-    
-    <div class="absolute bottom-4 right-4 bg-gray-800 border-2 border-gray-600 rounded-lg p-4 w-52">
-         <h2 class="text-xl font-bold mb-2">Backpack</h2>
-         <ul id="backpackItems" class="list-disc list-inside">
-             </ul>
-    </div>
+  <div id="dialogueBox"
+    class="absolute dialogue-box w-11/12 md:w-3/4 bg-gray-800 border-2 border-gray-600 rounded-lg p-4 hidden">
+    <p id="dialogueText" class="text-lg"></p>
+    <div id="dialogueOptions" class="mt-4 flex flex-col space-y-2"></div>
+    <button id="closeDialogue"
+      class="mt-4 px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 hidden">Close</button>
+  </div>
 
-    <script src="js/state.js"></script>
-    <script src="js/maps.js"></script>
-    <script src="js/pathfinding.js"></script>
-    <script src="js/drawing.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/pathfinding.js"></script>
+  <script src="js/drawing.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+
 </body>
+
 </html>

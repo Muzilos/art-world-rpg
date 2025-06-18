@@ -1,4 +1,33 @@
+// === UTILITY FUNCTIONS ===
+function isAdjacent(x1, y1, x2, y2) {
+  return Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1 && !(x1 === x2 && y1 === y2);
+}
+
+function getDialogueState(character) {
+  if (character.id === 'old_man') {
+    const questStatus = gameState.quests.chickenQuest;
+    const hasChicken = gameState.player.backpack.includes('chicken');
+    if (questStatus === 'rewarded') return 'quest_rewarded';
+    if (questStatus === 'completed' && hasChicken) return 'quest_hand_over';
+    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasChicken)) return 'quest_in_progress';
+  }
+  
+  if (character.id === 'merchant') {
+    const questStatus = gameState.quests.crystalQuest;
+    const hasCrystal = gameState.player.backpack.includes('crystal');
+    if (questStatus === 'rewarded') return 'quest_rewarded';
+    if (questStatus === 'completed' && hasCrystal) return 'quest_hand_over';
+    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasCrystal)) return 'quest_in_progress';
+  }
+  
+  return 'start';
+}
+
+// === GAME LOOP ===
+requestAnimationFrame(gameLoop);
+
 let lastTime = 0;
+
 function gameLoop(timestamp) {
   const deltaTime = timestamp - lastTime;
   lastTime = timestamp;
@@ -6,8 +35,10 @@ function gameLoop(timestamp) {
   draw();
   requestAnimationFrame(gameLoop);
 }
+
 function update(deltaTime) {
   gameState.player.moveTimer -= deltaTime;
+  
   if (gameState.player.path.length > 0 && gameState.player.moveTimer <= 0) {
     gameState.player.moveTimer = gameState.player.speed;
     const nextStep = gameState.player.path.shift();
@@ -16,60 +47,68 @@ function update(deltaTime) {
     checkTransition();
   }
 }
+
 function checkTransition() {
   const map = maps[gameState.currentMap];
   const transition = map.transitions.find(t => t.x === gameState.player.x && t.y === gameState.player.y);
+  
   if (transition) {
     gameState.currentMap = transition.targetMap;
     gameState.player.x = transition.targetX;
     gameState.player.y = transition.targetY;
     gameState.player.path = [];
+    gameState.clickMarker.x = -1;
+    gameState.clickMarker.y = -1;
   }
 }
+
+// === EVENT LISTENERS ===
 function initializeEventListeners() {
-  document.getElementById('levelUpButton').addEventListener('click', levelUp);
   document.getElementById('closeDialogue').addEventListener('click', closeDialogue);
-  document.getElementById('statsHeader').addEventListener('click', () => {
-    const content = document.getElementById('statsContent');
-    const toggle = document.getElementById('statsToggle');
-    content.classList.toggle('collapsed');
-    toggle.textContent = content.classList.contains('collapsed') ? '[ + ]' : '[ - ]';
-  });
+  
   canvas.addEventListener('click', (event) => {
     if (!document.getElementById('dialogueBox').classList.contains('hidden')) return;
+    
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left, mouseY = event.clientY - rect.top;
-    const tileX = Math.floor(mouseX / TILE_SIZE), tileY = Math.floor(mouseY / TILE_SIZE);
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    let tileX = Math.floor(mouseX / TILE_SIZE);
+    let tileY = Math.floor(mouseY / TILE_SIZE);
+    
+    // Update click marker
+    gameState.clickMarker.x = tileX;
+    gameState.clickMarker.y = tileY;
+    gameState.clickMarker.type = 'normal';
+    
+    // Check for character interaction (must be adjacent)
     const character = (gameState.characters[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
     if (character) {
-      let dialogueState = 'start';
-      if (character.id === 'old_man') {
-        // This logic determines which dialogue to show based on quest progress
-        const questStatus = gameState.quests.chickenQuest;
-        const hasChicken = gameState.player.backpack.includes('chicken');
-        if (questStatus === 'rewarded') {
-          dialogueState = 'quest_rewarded';
-        } else if (questStatus === 'completed' && hasChicken) {
-          dialogueState = 'quest_hand_over';
-        } else if (questStatus === 'accepted' || (questStatus === 'completed' && !hasChicken)) {
-          dialogueState = 'quest_in_progress';
-        }
+      if (isAdjacent(gameState.player.x, gameState.player.y, tileX, tileY)) {
+        gameState.clickMarker.type = 'interactive';
+        const dialogueState = getDialogueState(character);
+        showDialogue(character, dialogueState);
+        return;
+      } else {
+        gameState.clickMarker.type = 'interactive';
       }
-      showDialogue(character, dialogueState);
-      return;
     }
+    
+    // Check for transition markers
     const map = maps[gameState.currentMap];
+    const transition = map.transitions.find(t => t.x === tileX && t.y === tileY);
+    if (transition) {
+      gameState.clickMarker.type = 'interactive';
+    }
+    
+    // Movement
     const path = aStar({ x: gameState.player.x, y: gameState.player.y }, { x: tileX, y: tileY }, map);
     if (path.length > 0) {
-      path.shift();
+      path.shift(); // Remove starting position
       gameState.player.path = path;
       gameState.player.moveTimer = 0;
     }
   });
 }
 
-// --- Initial Game Start ---
-updateStatsUI();
-updateBackpackUI(); // Initial backpack draw
 initializeEventListeners();
 requestAnimationFrame(gameLoop);
