@@ -238,9 +238,6 @@ const gameActions = {
   },
 };
 
-
-// --- Refactored Entities Definition ---
-
 // Definitions of entities for each map, including their positions and dialogue trees.
 // This `entities` object will be the source of truth for the editor, mutable.
 const entities = {
@@ -648,7 +645,6 @@ const entities = {
               text: `My work here is done.`,
               nextState: 'end',
               actions: [
-                // the figure has vanished, so we remove it from the map
                 {
                   "id": "removeEntity",
                   "params": {
@@ -657,9 +653,8 @@ const entities = {
                   }
                 }
               ]
-
             }
-          ],
+          ]
         },
         'quest_in_progress': {
           text: `The space where the figure once stood feels cold. You recall the note's words about the Ancient Tablet.`,
@@ -673,48 +668,6 @@ const entities = {
         'end': {
           text: `Silence returns to the grotto.`,
           options: [
-          ]
-        }
-      }
-    },
-    {
-      id: 'entity_xkzhzno8q',
-      x: 18,
-      y: 14,
-      dialogue: {
-        'start': {
-          text: `Hello! I am a new entity.`,
-          options: [
-            {
-              text: `Hand over mysterious note`,
-              nextState: 'end',
-              actions: [
-                {
-                  "id": "removeItemFromBackpack",
-                  "params": {
-                    "item": "mysterious note"
-                  }
-                },
-                {
-                  "id": "changeQuestState",
-                  "params": {
-                    "questId": "mysteriousNoteQuest",
-                    "newState": "rewarded"
-                  }
-                },
-                {
-                  "id": "gainXp",
-                  "params": {
-                    "amounts": [
-                      500
-                    ],
-                    "skills": [
-                      "intelligence"
-                    ]
-                  }
-                }
-              ]
-            }
           ]
         }
       }
