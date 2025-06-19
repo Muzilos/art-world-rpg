@@ -28,12 +28,100 @@
       left: 50%;
       transform: translateX(-50%);
     }
+
+    /* Stats Panel Styles */
+    #statsPanel {
+      position: absolute;
+      top: 60px;
+      /* Adjust as needed, below HP bar */
+      left: 10px;
+      background-color: rgba(45, 55, 72, 0.85);
+      /* Tailwind gray-800 with some transparency */
+      border: 1px solid #4a5568;
+      /* Tailwind gray-600 */
+      border-radius: 0.375rem;
+      /* Tailwind rounded-md */
+      padding: 8px;
+      color: #e2e8f0;
+      /* Tailwind gray-200 */
+      font-size: 12px;
+      width: 200px;
+      /* Adjust as needed */
+      z-index: 10;
+      /* Ensure it's above the canvas but below modals if any */
+      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+      /* Smooth collapse */
+      overflow: hidden;
+      /* Important for collapse animation */
+    }
+
+    #statsPanel.collapsed #skillList,
+    #statsPanel.collapsed #backpackList {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+      visibility: hidden;
+      /* Hide content when collapsed */
+    }
+
+    #toggleStatsPanel {
+      background-color: #4a5568;
+      /* Tailwind gray-700 */
+      color: #e2e8f0;
+      /* Tailwind gray-200 */
+      border: none;
+      padding: 2px 6px;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 10px;
+      margin-bottom: 5px;
+    }
+
+    #toggleStatsPanel:hover {
+      background-color: #718096;
+      /* Tailwind gray-600 */
+    }
+
+    /* By default, hide the XP information */
+    .skill-item .xp-info {
+      display: none;
+      /* You can add other styling here for when it's visible, like color or font style */
+      /* For example: color: #888; */
+    }
+
+    /* When the .skill-item (the whole line) is hovered, display the .xp-info span */
+    .skill-item:hover .xp-info {
+      display: inline;
+      /* Or 'inline-block' or 'block' depending on desired layout */
+    }
+
+    .skill-item .xp-info {
+      display: none;
+      /* Hidden by default */
+      margin-left: 5px;
+      color: #a0aec0;
+      /* Tailwind gray-500 */
+    }
+
+    .skill-item:hover .xp-info {
+      display: inline;
+      /* Show on hover */
+    }
   </style>
 </head>
 
 <body class="flex flex-col items-center justify-center h-screen p-4">
   <h1 class="text-3xl font-bold mb-4">Art World RPG</h1>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <!-- Stats Panel Overlay -->
+  <div id="statsPanel">
+    <button id="toggleStatsPanel">Toggle Stats</button>
+    <div id="skillList" class="space-y-1"></div>
+    <div id="backpackList" class="mt-2 space-y-0.5"></div>
+  </div>
 
   <div id="dialogueBox"
     class="absolute dialogue-box w-11/12 md:w-3/4 bg-gray-800 border-2 border-gray-600 rounded-lg p-4 hidden">

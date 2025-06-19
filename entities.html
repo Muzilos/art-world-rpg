@@ -101,7 +101,7 @@
       <div class="mt-4 bg-gray-50 p-3 rounded-md border border-gray-200">
         <h3 class="text-lg font-semibold mb-2">Entities on TOWN</h3>
         <div id="entity-list" class="flex flex-wrap gap-2 mb-3 scrollable-list">
-          </div>
+        </div>
         <div class="flex gap-2">
           <button id="add-entity-btn"
             class="flex-1 bg-green-500 text-white py-2 px-4 rounded-md shadow hover:bg-green-600 transition-colors duration-200">
@@ -150,7 +150,7 @@
               State:</label>
             <select id="dialogue-state-select"
               class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
-              </select>
+            </select>
           </div>
           <div class="flex gap-2 mb-3">
             <button id="add-dialogue-state-btn"
@@ -177,7 +177,7 @@
             <div class="flex-grow flex-col">
               <h4 class="text-md font-semibold mb-2">Dialogue Options:</h4>
               <div id="dialogue-options-list" class="flex flex-wrap gap-2 mb-3 scrollable-list">
-                </div>
+              </div>
               <button id="add-dialogue-option-btn"
                 class="mb-3 bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-colors duration-200">
                 <i class="fas fa-plus mr-2"></i>Add Option
@@ -200,7 +200,7 @@
 
                 <h6 class="text-sm font-semibold mb-2 mt-4 text-gray-700">Actions:</h6>
                 <div id="actions-list" class="mb-2 scrollable-list">
-                  </div>
+                </div>
                 <button id="add-action-to-option-btn"
                   class="mb-3 bg-indigo-500 text-white py-1 px-3 rounded-md text-sm shadow hover:bg-indigo-600 transition-colors duration-200">
                   <i class="fas fa-plus mr-2"></i>Add Action
@@ -214,10 +214,10 @@
                     <label class="block text-sm font-medium text-gray-700">Action Type:</label>
                     <select id="action-type-select"
                       class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
-                      </select>
+                    </select>
                   </div>
                   <div id="action-parameters" class="mb-2 p-2 border border-gray-300 rounded-md bg-gray-100 hidden">
-                    </div>
+                  </div>
                   <button id="test-action-btn"
                     class="mt-2 bg-green-500 text-white py-1 px-3 rounded-md text-sm hover:bg-green-600 transition-colors duration-200">
                     <i class="fas fa-flask mr-2"></i>Test Action
@@ -241,7 +241,7 @@
       <div class="flex-grow bg-gray-50 p-3 rounded-md border border-gray-200 mb-4">
         <h3 class="text-lg font-semibold mb-2">Current Quests</h3>
         <div id="quests-list" class="mb-3 scrollable-list">
-          </div>
+        </div>
         <div class="mt-3 flex gap-2">
           <button id="add-quest-btn"
             class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-colors duration-200">
@@ -255,7 +255,7 @@
         <p class="text-sm text-gray-700 mb-2">
           Copy the generated JavaScript for `entities.js` and `state.js` below to integrate into your game.
           Functions in `entities.js` will be re-converted to their original format.
-          <script src="js/entities.js"></script> 
+          <script src="js/entities.js"></script>
           <script src="js/state.js"></script>
           <script src="js/maps.js"></script>
         </p>
@@ -305,7 +305,7 @@
         <p class="text-gray-700 mb-2"><span class="font-semibold" id="sim-char-name"></span>: <span
             id="sim-dialogue-text"></span></p>
         <div id="sim-dialogue-options" class="flex flex-col gap-2 mt-3">
-          </div>
+        </div>
       </div>
       <div class="border-t border-gray-200 pt-3 mt-3">
         <h4 class="font-semibold text-gray-800 mb-2">Simulated Game State Changes:</h4>
@@ -438,7 +438,7 @@
     }
 
     // This is the showDialogue for the simulation environment
-    function editorDialogueSystemShowDialogue(charObj, stateKey) {
+    function showDialogue(charObj, stateKey) {
       simChar = charObj;
       simDialogueState = stateKey;
       renderSimulationDialogue();
@@ -487,9 +487,9 @@
                   try {
                     if (actionObj.id === 'customAction') {
                       // For custom actions, parse and execute the raw code directly
-                      // The custom action function expects (gameState, entities, showDialogue) as arguments
-                      const func = new Function('gameState', 'entities', 'showDialogue', actionObj.params.code);
-                      func(simulatedGameState, simulatedEntities, editorDialogueSystemShowDialogue);
+                      // The custom action function expects (gameState, entities) as arguments
+                      const func = new Function('gameState', 'entities', actionObj.params.code);
+                      func(simulatedGameState, simulatedEntities);
                     } else if (actionObj.id === 'none') {
                       // Do nothing for 'none' action
                       return;
@@ -504,7 +504,7 @@
                         const executableAction = actionFunctionCreator(...orderedParams);
                         // Then execute the returned function, passing simulated state and entities
                         if (typeof executableAction === 'function') {
-                          executableAction(simulatedGameState, simulatedEntities, editorDialogueSystemShowDialogue);
+                          executableAction(simulatedGameState, simulatedEntities);
                         } else {
                           console.warn(`Simulation Warning: Action '${actionObj.id}' did not return an executable function.`);
                         }
@@ -515,7 +515,7 @@
                   } catch (e) {
                     console.error("Simulation Action Error:", e);
                     // Use the simulation modal's showDialogue for errors within simulation
-                    editorDialogueSystemShowDialogue({
+                    showDialogue({
                       id: 'SYSTEM',
                       dialogue: {
                         'error_sim_action': {
@@ -846,6 +846,7 @@
     const renderActionParametersSection = () => {
       const currentDialogueOption = getSelectedDialogueOption();
       const currentAction = currentDialogueOption && selectedActionIndex !== null ? currentDialogueOption.actions[selectedActionIndex] : null;
+      const skillOptions = gameActionMetadata.gainXp.parameters.find(p => p.name === 'skills').options;
 
       actionParametersSectionDiv.classList.add('hidden'); // Hide the entire section by default
       actionParametersDiv.innerHTML = ''; // Clear previous parameters
@@ -885,46 +886,132 @@
             label.textContent = param.label + ':';
             paramDiv.appendChild(label);
 
-            let inputElement;
-            // Use currentAction.params for initial value
-            let paramValue = currentAction.params[param.name];
+            if (currentAction.id === 'gainXp' && (param.name === 'amounts' || param.name === 'skills')) {
+              // Special handling for gainXp to allow multiple entries
+              const containerDiv = document.createElement('div');
+              containerDiv.className = 'flex flex-col gap-2 p-2 border border-gray-300 rounded-md bg-gray-50';
+              containerDiv.id = `gain-xp-${param.name}-list`;
 
-            if (param.type === 'text' || param.type === 'number') {
-              inputElement = document.createElement('input');
-              inputElement.type = param.type;
-              inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm';
-              // Set value, respecting defaultValue if paramValue is undefined
-              inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : '');
-            } else if (param.type === 'textarea') {
-              inputElement = document.createElement('textarea');
-              inputElement.rows = 5;
-              inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm font-mono text-xs';
-              inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : '');
-            } else if (param.type === 'select') {
-              inputElement = document.createElement('select');
-              inputElement.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md sm:text-sm';
-              // Dynamically get options if it's a function (e.g., for quest IDs)
-              const options = typeof param.options === 'function' ? param.options() : param.options;
-              options.forEach(opt => {
-                const optionElem = document.createElement('option');
-                optionElem.value = opt;
-                optionElem.textContent = opt;
-                inputElement.appendChild(optionElem);
-              });
-              // Set value, respecting defaultValue if paramValue is undefined
-              inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : options[0] || '');
-            }
+              // Ensure arrays exist for params
+              if (!currentAction.params.amounts) currentAction.params.amounts = [];
+              if (!currentAction.params.skills) currentAction.params.skills = [];
 
-            inputElement.id = `action-param-${param.name}`;
-            inputElement.name = param.name;
-            inputElement.addEventListener('input', updateCurrentActionParameters); // Use input for text/textarea
-            inputElement.addEventListener('change', updateCurrentActionParameters); // Use change for select/number
-            paramDiv.appendChild(inputElement);
-            actionParametersDiv.appendChild(paramDiv);
+              // Render existing amount/skill pairs
+              for (let i = 0; i < Math.max(currentAction.params.amounts.length, currentAction.params.skills.length); i++) {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'flex items-center gap-2';
 
-            // If a parameter has a default value and it's not set in currentAction.params, initialize it.
-            if (param.defaultValue !== undefined && currentAction.params[param.name] === undefined) {
-              currentAction.params[param.name] = param.defaultValue;
+                // Amount input
+                const amountInput = document.createElement('input');
+                amountInput.type = 'number';
+                amountInput.className = 'flex-1 mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm';
+                amountInput.placeholder = 'Amount';
+                amountInput.value = currentAction.params.amounts[i] !== undefined ? currentAction.params.amounts[i] : (param.defaultValue !== undefined ? param.defaultValue : 0);
+                amountInput.dataset.index = i;
+                amountInput.addEventListener('input', (e) => {
+                  const idx = parseInt(e.target.dataset.index);
+                  currentAction.params.amounts[idx] = parseInt(e.target.value) || 0;
+                  renderExportData();
+                });
+                entryDiv.appendChild(amountInput);
+
+                // Skill select
+                const skillSelect = document.createElement('select');
+                skillSelect.className = 'flex-1 mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md sm:text-sm';
+                const skillOptions = typeof gameActionMetadata.gainXp.parameters.find(p => p.name === 'skills').options === 'function' ? gameActionMetadata.gainXp.parameters.find(p => p.name === 'skills').options() : gameActionMetadata.gainXp.parameters.find(p => p.name === 'skills').options;
+                skillOptions.forEach(opt => {
+                  const optionElem = document.createElement('option');
+                  optionElem.value = opt;
+                  optionElem.textContent = opt;
+                  skillSelect.appendChild(optionElem);
+                });
+                skillSelect.value = currentAction.params.skills[i] !== undefined ? currentAction.params.skills[i] : (param.defaultValue !== undefined ? param.defaultValue : skillOptions[0] || '');
+                skillSelect.dataset.index = i;
+                skillSelect.addEventListener('change', (e) => {
+                  const idx = parseInt(e.target.dataset.index);
+                  currentAction.params.skills[idx] = e.target.value;
+                  renderExportData();
+                });
+                entryDiv.appendChild(skillSelect);
+
+                // Remove button
+                const removeButton = document.createElement('button');
+                removeButton.className = 'text-red-500 hover:text-red-700 px-2 py-1 rounded-full text-lg';
+                removeButton.innerHTML = '<i class="fas fa-times-circle"></i>';
+                removeButton.title = 'Remove XP Entry';
+                removeButton.onclick = () => {
+                  showCustomModal('Are you sure you want to remove this XP entry?', 'confirm', (result) => {
+                    if (result) {
+                      currentAction.params.amounts.splice(i, 1);
+                      currentAction.params.skills.splice(i, 1);
+                      renderActionParametersSection(); // Re-render the section
+                    }
+                  });
+                };
+                entryDiv.appendChild(removeButton);
+
+                containerDiv.appendChild(entryDiv);
+              }
+
+              // Add new entry button
+              const addButton = document.createElement('button');
+              addButton.className = 'mt-2 bg-purple-400 text-white py-1 px-3 rounded-md text-sm hover:bg-purple-500 transition-colors duration-200';
+              addButton.innerHTML = '<i class="fas fa-plus mr-1"></i>Add XP Entry';
+              addButton.onclick = () => {
+                currentAction.params.amounts.push(0); // Default amount
+                currentAction.params.skills.push(skillOptions[0] || ''); // Default skill
+                renderActionParametersSection(); // Re-render to show new input fields
+              };
+              containerDiv.appendChild(addButton);
+              paramDiv.appendChild(containerDiv);
+
+              // Add this paramDiv only once, for either 'amounts' or 'skills', not both.
+              // We'll treat 'amounts' as the master for the UI group.
+              if (param.name === 'amounts') {
+                actionParametersDiv.appendChild(paramDiv);
+              }
+            } else {
+              let inputElement;
+              // Use currentAction.params for initial value
+              let paramValue = currentAction.params[param.name];
+
+              if (param.type === 'text' || param.type === 'number') {
+                inputElement = document.createElement('input');
+                inputElement.type = param.type;
+                inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm';
+                // Set value, respecting defaultValue if paramValue is undefined
+                inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : '');
+              } else if (param.type === 'textarea') {
+                inputElement = document.createElement('textarea');
+                inputElement.rows = 5;
+                inputElement.className = 'mt-1 block w-full border-gray-300 rounded-md shadow-sm font-mono text-xs';
+                inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : '');
+              } else if (param.type === 'select') {
+                inputElement = document.createElement('select');
+                inputElement.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md sm:text-sm';
+                // Dynamically get options if it's a function (e.g., for quest IDs)
+                const options = typeof param.options === 'function' ? param.options() : param.options;
+                options.forEach(opt => {
+                  const optionElem = document.createElement('option');
+                  optionElem.value = opt;
+                  optionElem.textContent = opt;
+                  inputElement.appendChild(optionElem);
+                });
+                // Set value, respecting defaultValue if paramValue is undefined
+                inputElement.value = paramValue !== undefined ? paramValue : (param.defaultValue !== undefined ? param.defaultValue : options[0] || '');
+              }
+
+              inputElement.id = `action-param-${param.name}`;
+              inputElement.name = param.name;
+              inputElement.addEventListener('input', updateCurrentActionParameters); // Use input for text/textarea
+              inputElement.addEventListener('change', updateCurrentActionParameters); // Use change for select/number
+              paramDiv.appendChild(inputElement);
+              actionParametersDiv.appendChild(paramDiv);
+
+              // If a parameter has a default value and it's not set in currentAction.params, initialize it.
+              if (param.defaultValue !== undefined && currentAction.params[param.name] === undefined) {
+                currentAction.params[param.name] = param.defaultValue;
+              }
             }
           });
         }
@@ -955,6 +1042,11 @@
 
         // Update individual parameters
         selectedActionDef.parameters.forEach(param => {
+          if (currentAction.id === 'gainXp' && (param.name === 'amounts' || param.name === 'skills')) {
+            // These are handled by their specific input listeners within renderActionParametersSection
+            // No need to re-process here as they directly update currentAction.params.amounts/skills
+            return;
+          }
           const inputElement = document.getElementById(`action-param-${param.name}`);
           if (inputElement) {
             let value = inputElement.value;
@@ -1028,37 +1120,13 @@
           return null; // Return null to filter out
         }
 
-        const actionDef = gameActionMetadata[actionObj.id];
-
-        if (actionDef) {
-          if (actionObj.id === 'customAction') {
-            // For customAction, output the raw function string itself.
-            // This function is then expected to be called during game runtime by the dialogue system.
-            // It will be parsed back into a function by the stringify/replace logic.
-            // Example: `function(gameState, entities, showDialogue) { /* code */ }`
-            return `(gameState, entities, showDialogue) => {\n                ${actionObj.params.code || ''}\n              }`;
-          } else if (actionObj.id === 'none') {
-            return null; // Filter out 'none' actions from the exported array
-          } else {
-            const paramValues = actionDef.parameters.map(param => {
-              let val = actionObj.params[param.name];
-              // Handle undefined/null values for optional parameters, use default if available
-              if (val === undefined || val === null) {
-                return param.defaultValue !== undefined ? String(param.defaultValue) : 'undefined';
-              }
-              if (param.type === 'text' || param.type === 'select' || param.type === 'textarea') {
-                // Escape backticks for template literals, and wrap in backticks
-                return `\`${String(val).replace(/`/g, '\\`')}\``;
-              }
-              return String(val); // For numbers, booleans, or other types, return as is
-            }).join(', ');
-            // Construct the string for the actual factory function call.
-            return `gameActions.${actionObj.id}(${paramValues})`;
-          }
-        } else {
-          console.warn(`Action definition for ID '${actionObj.id}' not found during export. Skipping action.`);
-          return null;
-        }
+        // Directly return the stringified action object in the desired format
+        // This will now output: `{ id: 'changeQuestState', params: { questId: 'chickenQuest', newState: 'accepted' } }`
+        return JSON.stringify(actionObj, (key, value) => {
+          // Custom replacer function to handle specific formatting needs if any
+          // For now, default stringify is fine. We just want the raw object.
+          return value;
+        }, 2); // Use 2 for indentation for readability
       };
 
       // Create a deep copy of entities for export to avoid modifying the live data
@@ -1082,6 +1150,7 @@
           dialogueStateKeys.forEach((stateId, stateIndex) => {
             const state = char.dialogue[stateId];
             entitiesString += `        '${stateId}': {\n`;
+            // Use backticks for text to handle multi-line strings easily
             entitiesString += `          text: \`${state.text.replace(/`/g, '\\`')}\`,\n`;
             entitiesString += `          options: [\n`;
 
@@ -1096,7 +1165,11 @@
 
               if (actionsForExport.length > 0) {
                 // Join actions with comma and newline for proper formatting
-                entitiesString += `              actions: [\n                ${actionsForExport.join(',\n                ')}\n              ]\n`;
+                entitiesString += `              actions: [\n`;
+                actionsForExport.forEach((actionStr, i) => {
+                  entitiesString += `                ${actionStr}${i < actionsForExport.length - 1 ? ',' : ''}\n`;
+                });
+                entitiesString += `              ]\n`;
               }
               entitiesString += `            }${optionIndex < (state.options.length - 1) ? ',' : ''}\n`; // Comma after option
             });
@@ -1154,7 +1227,8 @@
       } else if (selectedEntity && selectedEntity.mapId === currentMapId) {
         // Move selected entity
         entities[currentMapId] = entities[currentMapId].map(char =>
-          char.id === selectedEntity.charId ? { ...char,
+          char.id === selectedEntity.charId ? {
+            ...char,
             x,
             y
           } : char
@@ -1336,16 +1410,15 @@
 
     const handleAddQuest = () => {
       showCustomModal("Enter new quest ID:", 'prompt', (newQuestId) => {
+        console.log("Adding new quest with ID:", newQuestId);
         if (newQuestId === null) return;
         if (!newQuestId || gameState.quests[newQuestId]) {
           showCustomModal("Invalid or duplicate ID.", 'alert');
           return;
         }
-        showCustomModal("Enter initial quest status (e.g., 'not_started', 'accepted', 'completed'):", 'prompt', (newQuestStatus) => {
-          if (newQuestStatus === null) return;
-          gameState.quests[newQuestId] = newQuestStatus || 'not_started';
-          renderAllUI();
-        }, 'not_started');
+        gameState.quests[newQuestId] = 'not_started';
+        renderQuestEditor();
+        renderExportData(); // Update export data after adding quest
       }, generateUniqueId('quest'));
     };
 
@@ -1455,10 +1528,10 @@
           let tempEntitiesForTest = JSON.parse(JSON.stringify(entities));
           try {
             if (actionObj.id === 'customAction') {
-              // The custom action function expects (gameState, entities, showDialogue) as arguments
-              const actionFunction = new Function('gameState', 'entities', 'showDialogue', actionObj.params.code);
+              // The custom action function expects (gameState, entities) as arguments
+              const actionFunction = new Function('gameState', 'entities', actionObj.params.code);
               if (actionFunction) {
-                actionFunction(tempGameStateForTest, tempEntitiesForTest, (c, s) => console.log(`[Test Action Dialogue]: ${c.dialogue[s].text}`));
+                actionFunction(tempGameStateForTest, tempEntitiesForTest);
                 showCustomModal(`Custom action tested. Simulated state changes (check console): ${JSON.stringify(tempGameStateForTest.quests)}`, 'alert');
               }
             } else if (actionObj.id === 'none') {

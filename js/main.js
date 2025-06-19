@@ -7,11 +7,12 @@
  * @param {number} y2 - Y-coordinate of the second point.
  * @returns {boolean} - True if adjacent, false otherwise.
  */
-function isAdjacent(x1, y1, x2, y2) {
+function canInteract(x1, y1, x2, y2) {
   // Returns true if the absolute difference in x is 0 or 1, AND
-  // the absolute difference in y is 0 or 1, AND
-  // they are not the exact same tile (i.e., not standing on self).
-  return Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1 && !(x1 === x2 && y1 === y2);
+  // the absolute difference in y is 0 or 1, OR
+  // they are already on the exact same tile (i.e., standing on self).
+  return (Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1) || (x1 === x2 && y1 === y2);
+
 }
 
 /**
@@ -40,6 +41,8 @@ function getDialogueState(entity) {
 
   // New Quest: Mysterious Note
   if (entity.id === 'mysterious_figure') {
+    console.log('Checking dialogue state for mysterious figure');
+    // Check the quest status and whether the player has the note
     const questStatus = gameState.quests.mysteriousNoteQuest;
     const hasNote = gameState.player.backpack.includes('mysterious_note');
     if (questStatus === 'rewarded') return 'quest_rewarded';
@@ -61,6 +64,7 @@ let lastTime = 0; // Timestamp of the previous frame
 function gameLoop(timestamp) {
   const deltaTime = timestamp - lastTime; // Calculate time elapsed since last frame
   lastTime = timestamp; // Update lastTime for the next frame
+  updateUIOverlay(); // Update DOM-based UI elements
 
   update(deltaTime); // Update game state
   draw(); // Redraw game elements
@@ -114,8 +118,23 @@ function checkTransition() {
  * Initializes all necessary event listeners for user interaction.
  */
 function initializeEventListeners() {
+    // Get references to UI overlay elements
+  let statsPanelElement = document.getElementById('statsPanel');
+  let toggleButtonElement = document.getElementById('toggleStatsPanel'); // Assuming a toggle button exists
+
   // Event listener for closing the dialogue box
   document.getElementById('closeDialogue').addEventListener('click', closeDialogue);
+
+    // Add event listener for the stats panel toggle button
+  // This assumes you have a button with id="toggleStatsPanel" in your HTML
+  if (toggleButtonElement) {
+    toggleButtonElement.addEventListener('click', () => {
+      gameState.ui.statsPanelCollapsed = !gameState.ui.statsPanelCollapsed;
+      // The updateUIOverlay function will handle updating the class based on this state
+    });
+  } else {
+    console.warn("Toggle button element with id 'toggleStatsPanel' not found.");
+  }
 
   // Event listener for clicks on the game canvas
   canvas.addEventListener('click', (event) => {
@@ -126,6 +145,18 @@ function initializeEventListeners() {
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
+
+        // Check if the click occurred within the stats panel DOM element
+    const statsPanel = statsPanelElement;
+    if (statsPanel) {
+      const statsPanelRect = statsPanel.getBoundingClientRect();
+      if (event.clientX >= statsPanelRect.left && event.clientX <= statsPanelRect.right &&
+          event.clientY >= statsPanelRect.top && event.clientY <= statsPanelRect.bottom) {
+        // Click was inside the stats panel, do NOT process as a game click
+        return;
+      }
+    }
+
     let tileX = Math.floor(mouseX / TILE_SIZE);
     let tileY = Math.floor(mouseY / TILE_SIZE);
 
@@ -141,7 +172,7 @@ function initializeEventListeners() {
     if (entity) {
       gameState.clickMarker.type = 'interactive'; // Mark as interactive
       // If the entity is adjacent, show dialogue. Otherwise, move to an adjacent tile.
-      if (isAdjacent(gameState.player.x, gameState.player.y, tileX, tileY)) {
+      if (canInteract(gameState.player.x, gameState.player.y, tileX, tileY)) {
         const dialogueState = getDialogueState(entity);
         showDialogue(entity, dialogueState);
       } else {
@@ -167,14 +198,22 @@ function initializeEventListeners() {
     const transition = map.transitions.find(t => t.x === tileX && t.y === tileY);
     if (transition) {
       gameState.clickMarker.type = 'interactive'; // Mark as interactive
-      // If a transition tile is clicked, the player should move directly onto it.
-      const path = aStar({ x: gameState.player.x, y: gameState.player.y }, { x: tileX, y: tileY }, map);
-      if (path.length > 0) {
-        path.shift(); // Remove starting position (player's current tile)
-        gameState.player.path = path;
+      // If a transition tile is clicked, and the player is already standing on it, the trigger should be immediate.
+      // If the player is not on the transition tile, we need to move to it first.
+      if (gameState.player.x === tileX && gameState.player.y === tileY) {
+        // Trigger the transition immediately
+        checkTransition();
+        return; // Stop further processing after transition interaction
+      } else {
+        // otherwise the player should move directly onto it.
+        const path = aStar({ x: gameState.player.x, y: gameState.player.y }, { x: tileX, y: tileY }, map);
+        if (path.length > 0) {
+          path.shift(); // Remove starting position (player's current tile)
+          gameState.player.path = path;
         gameState.player.moveTimer = 0;
       }
-      return; // Stop further processing after transition interaction
+        return; // Stop further processing after transition interaction
+      }
     }
 
     // If no interactive element is clicked, move to the clicked tile directly

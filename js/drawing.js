@@ -83,42 +83,94 @@ function draw() {
  * Draws the player's UI elements (HP, Level, XP, Backpack) on the canvas.
  */
 function drawMapUI() {
-  const stats = gameState.player.stats; // Get player stats
 
   // Health bar
   const hpBarWidth = 120;
   const hpBarHeight = 12;
+  const stats = gameState.player.stats; // Get player stats
   const hpRatio = stats.hp / stats.maxHp; // Current HP ratio
 
   ctx.fillStyle = '#4a5568'; // Background for HP bar (Tailwind gray-700)
   ctx.fillRect(10, 10, hpBarWidth, hpBarHeight); // Draw background bar
   // Fill HP bar with color based on HP ratio
   // Green if above 50%, orange if above 25%, red if below
-  ctx.fillStyle = hpRatio > 0.5 
-  ? '#000078' : hpRatio > 0.25 ? '#0d8936' : '#056565'; // Blue, orange, or red
+  ctx.fillStyle = hpRatio > 0.5
+    ? '#000078' : hpRatio > 0.25 ? '#0d8936' : '#056565'; // Blue, orange, or red
   ctx.fillRect(10, 10, hpBarWidth * hpRatio, hpBarHeight); // Draw filled HP bar
 
   ctx.fillStyle = '#e2e8f0'; // Text color (Tailwind gray-200)
   ctx.font = '12px Courier New'; // Font for UI text
   ctx.fillText(`HP: ${stats.hp}/${stats.maxHp}`, 10, 35); // Display HP text
 
-  // Level and XP
-  ctx.fillText(`Level: ${stats.level}`, 10, 50); // Display level
-  ctx.fillText(`XP: ${stats.xp}/${stats.xpToNextLevel}`, 10, 65); // Display XP
+  // Skill and Backpack UI is now handled by a separate DOM overlay.
+  // The updateUIOverlay function is responsible for updating the content
+  // and visibility of the DOM elements based on gameState.ui.statsPanelCollapsed.
+}
 
-  // Attack/Defense
-  ctx.fillText(`ATK: ${stats.attack} DEF: ${stats.defense}`, 10, 80); // Display ATK/DEF
+/**
+ * Updates the content and visibility of the DOM-based UI overlay elements.
+ * This includes the stats panel (skills, backpack).
+ */
+function updateUIOverlay() {
+  // Ensure UI elements are referenced (should be done in initializeEventListeners)
+  const statsPanel = document.getElementById('statsPanel');
+  const skillList = document.getElementById('skillList');
+  const backpackList = document.getElementById('backpackList');
+
+  if (!statsPanel || !skillList || !backpackList) {
+    // console.error("UI overlay elements not found!"); // Avoid spamming console if elements aren't ready
+    return; // Cannot update if elements aren't referenced yet
+  }
+
+  // Toggle collapsed class on the stats panel container
+  if (gameState.ui.statsPanelCollapsed) {
+    statsPanel.classList.add('collapsed');
+  } else {
+    statsPanel.classList.remove('collapsed');
+  }
+
+  // Update Skill List content (always update, CSS handles visibility/hover)
+  const stats = gameState.player.stats;
+  const skillNames = Object.keys(stats.skills); // Get skill names
+  skillList.innerHTML = ''; // Clear current list
+  skillNames.forEach((skill) => {
+    const skillData = stats.skills[skill];
+    // Create a container for each skill to handle hover
+    const skillElement = document.createElement('div');
+    skillElement.classList.add('skill-item'); // Add a class for styling/hover
+    const nameSpan = document.createElement('span');
+    const capitalizedSkill = skill.charAt(0).toUpperCase() + skill.slice(1);
+    nameSpan.textContent = `${capitalizedSkill}: Level ${skillData.level}`;
+
+    // Add a space node for better visual separation before the XP info when it appears
+    nameSpan.appendChild(document.createTextNode(' '));
+
+    const xpSpan = document.createElement('span');
+    xpSpan.classList.add('xp-info');
+    xpSpan.textContent = `(XP: ${skillData.xp}/${skillData.xpToNextLevel})`;
+
+    skillElement.appendChild(nameSpan);
+    skillElement.appendChild(xpSpan);
+    skillList.appendChild(skillElement);
+  });
 
   // Backpack content
-  ctx.fillText('Backpack:', 10, 100); // Backpack label
-  if (gameState.player.backpack.length === 0) {
-    ctx.fillStyle = '#a0aec0'; // Lighter gray for empty message (Tailwind gray-400)
-    ctx.fillText('(empty)', 10, 115); // Display empty message
+  backpackList.innerHTML = ''; // Clear current list
+  const backpackItems = gameState.player.backpack;
+  const backpackHeader = document.createElement('div');
+  backpackHeader.textContent = 'Backpack:';
+  backpackList.appendChild(backpackHeader);
+
+  if (backpackItems.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.classList.add('empty-backpack'); // Add class for styling
+    emptyMessage.textContent = '(empty)';
+    backpackList.appendChild(emptyMessage);
   } else {
-    // List items in backpack
-    gameState.player.backpack.forEach((item, i) => {
-      ctx.fillStyle = '#e2e8f0'; // Text color
-      ctx.fillText(`• ${item.charAt(0).toUpperCase() + item.slice(1).replace(/_/g, ' ')}`, 10, 115 + i * 15); // Format item name
+    backpackItems.forEach((item) => {
+      const itemElement = document.createElement('div');
+      itemElement.textContent = `• ${item.charAt(0).toUpperCase() + item.slice(1).replace(/_/g, ' ')}`;
+      backpackList.appendChild(itemElement);
     });
   }
 }

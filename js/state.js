@@ -2,6 +2,9 @@
 const gameState = {
   currentMap: 'town', // The ID of the currently active map.
   clickMarker: { x: -1, y: -1, type: 'normal' }, // Stores coordinates and type of the last clicked tile for highlighting.
+  ui: {
+    statsPanelCollapsed: false, // Whether the stats menu UI is currently collapsed.
+  },
   player: {
     x: 5, y: 5, // Player's current coordinates on the map.
     path: [], // Array of tiles representing the player's movement path (for A*).
@@ -9,9 +12,52 @@ const gameState = {
     moveTimer: 0, // Timer to control movement animation.
     backpack: [], // Array to store items the player has collected.
     stats: {
-      level: 1, hp: 100, maxHp: 100, // Player's combat stats.
+      // level and xp per skill
+      hp: 100, maxHp: 100, // Player's stats.
       attack: 10, defense: 5,
-      xp: 0, xpToNextLevel: 100 // Experience points and requirement for next level.
+      xpToNextLevel: 100, // Experience points and requirement for next level.
+      skills: {
+        vitality: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        reputation: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        strength: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        dexterity: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        intelligence: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        creativity: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        stealth: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        },
+        speed: {
+          level: 0,
+          xp: 0,
+          xpToNextLevel: 100
+        }
+      }
     }
   },
   quests: {

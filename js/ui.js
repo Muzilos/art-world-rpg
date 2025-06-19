@@ -1,6 +1,14 @@
-function showDialogue(entity, stateKey) {
+// Define closeDialogue first, as showDialogue might reference it
+const closeDialogue = () => { // Changed to const arrow function
+  document.getElementById('dialogueBox').classList.add('hidden');
+  gameState.clickMarker.x = -1;
+  gameState.clickMarker.y = -1;
+};
+
+// Now define showDialogue
+const showDialogue = (entity, stateKey) => { // Changed to const arrow function
   const dialogueNode = entity.dialogue[stateKey];
-  if (!dialogueNode) { closeDialogue(); return; }
+  if (!dialogueNode) { closeDialogue(); return; } // closeDialogue is now defined
 
   document.getElementById('dialogueText').textContent = dialogueNode.text;
   const optionsContainer = document.getElementById('dialogueOptions');
@@ -17,7 +25,10 @@ function showDialogue(entity, stateKey) {
       button.onclick = () => {
         // Execute actions if defined, then change state or close dialogue
         if (option.actions) {
+          // Ensure actions are not halted by a previous action
+          let halted = false;
           option.actions.forEach(actionObj => {
+            if (halted) return; // Stop processing if halted
             // Ensure actionObj is not null/undefined
             if (!actionObj) {
               console.warn("Skipping null/undefined actionObj in game execution.");
@@ -29,30 +40,35 @@ function showDialogue(entity, stateKey) {
             if (actionDef) {
               try {
                 if (actionObj.id === 'customAction') {
-                  // For custom actions, the 'code' parameter contains the raw JavaScript function body.
-                  // This function is expected to take (gameState, entities, showDialogue) as arguments.
                   const customCode = actionObj.params.code;
-                  // Create a function from the raw code and execute it.
-                  // Pass the actual gameState, entities, and showDialogue from the game environment.
-                  const func = new Function('gameState', 'entities', 'showDialogue', customCode);
-                  func(gameState, entities, showDialogue);
+                  const func = new Function('gameState', 'entities', customCode);
+                  func(gameState, entities);
                 } else if (actionObj.id === 'none') {
-                  // Do nothing for 'none' action type
                   return;
                 } else {
-                  // Get the factory function from the global gameActions object
                   const actionFunctionCreator = gameActions[actionObj.id];
 
                   if (typeof actionFunctionCreator === 'function') {
-                    // Map parameters from the actionObj.params to arguments for the factory function
-                    const orderedParams = actionDef.parameters.map(param => actionObj.params[param.name]);
+                    let orderedParams;
+                    if (actionObj.id === 'gainXp') {
+                      orderedParams = [
+                        actionObj.params.amounts || [],
+                        actionObj.params.skills || []
+                      ];
+                    } else {
+                      orderedParams = actionDef.parameters.map(param => actionObj.params[param.name]);
+                    }
 
-                    // Call the factory function (e.g., gameActions.addItemToBackpack('item'))
                     const executableAction = actionFunctionCreator(...orderedParams);
 
-                    // Then execute the returned function, passing the actual game state and environment
                     if (typeof executableAction === 'function') {
-                      executableAction(gameState, entities, showDialogue);
+                      const success = executableAction(gameState, entities);
+                      if (!success) {
+                        // halt execution of subsequent actions
+                        console.warn(`Game execution Warning: Action '${actionObj.id}' did not execute successfully. Halting further actions.`);
+                        halted = true;
+                        return;
+                      }
                     } else {
                       console.warn(`Game execution Warning: Action '${actionObj.id}' did not return an executable function.`);
                     }
@@ -62,8 +78,7 @@ function showDialogue(entity, stateKey) {
                 }
               } catch (e) {
                 console.error(`Error executing action '${actionObj.id}':`, e);
-                // Optionally, display an in-game error message
-                // showDialogue({id: 'SYSTEM', dialogue: {'error': {text: `An error occurred: ${e.message}`, options: [{text: "OK", nextState: 'end'}]}}}, 'error');
+                showDialogue({id: 'SYSTEM', dialogue: {'error': {text: `An error occurred: ${e.message}`, options: [{text: "OK", nextState: 'end'}]}}}, 'error');
               }
             } else {
               console.warn(`Action metadata for ID '${actionObj.id}' not found. Skipping action.`);
@@ -79,10 +94,5 @@ function showDialogue(entity, stateKey) {
   }
 
   document.getElementById('dialogueBox').classList.remove('hidden');
-}
+};
 
-function closeDialogue() {
-  document.getElementById('dialogueBox').classList.add('hidden');
-  gameState.clickMarker.x = -1;
-  gameState.clickMarker.y = -1;
-}
