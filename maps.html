@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Game Map Editor</title>
+    <style>
+        /* Apply a subtle background and use a clean font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2f7;
+            /* Light blue background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Center content horizontally */
+            justify-content: center;
+            /* Center content vertically if space allows */
+            min-height: 100vh;
+            /* Ensure body takes full viewport height */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            /* Include padding in element's total width and height */
+        }
+
+        /* Styling for the container holding controls and canvas */
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            /* Rounded corners for the container */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            /* Soft shadow */
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            /* Space between elements */
+            max-width: 90%;
+            /* Max width for responsiveness */
+            width: fit-content;
+            /* Adjust width to content */
+        }
+
+        h2 {
+            color: #2c3e50;
+            /* Darker text color */
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        /* Dropdown styling */
+        select {
+            padding: 10px 15px;
+            font-size: 1.1em;
+            border: 2px solid #3498db;
+            /* Blue border */
+            border-radius: 8px;
+            /* Rounded corners */
+            background-color: #ecf0f1;
+            /* Light gray background */
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+
+        select:hover {
+            border-color: #2980b9;
+            /* Darker blue on hover */
+            background-color: #e0e6e7;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+            /* Focus glow */
+        }
+
+        /* General button styling */
+        button {
+            background-color: #28a745;
+            /* Green for action */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #218838;
+            /* Darker green on hover */
+            transform: translateY(-2px);
+            /* Slight lift effect */
+        }
+
+        button:active {
+            background-color: #1e7e34;
+            /* Even darker on active */
+            transform: translateY(0);
+            /* Return to original position */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Canvas styling */
+        canvas {
+            background-color: #ecf0f1;
+            /* Light background for the map itself */
+            border: 2px solid #bdc3c7;
+            /* Subtle border */
+            border-radius: 8px;
+            /* Rounded corners for the canvas */
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+            /* Inner shadow for depth */
+            display: block;
+            /* Remove extra space below canvas */
+            cursor: grab;
+            /* Indicate draggable */
+        }
+
+        canvas.dragging {
+            cursor: grabbing;
+            /* Indicate currently dragging */
+        }
+
+        .message-box {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-top: 15px;
+            text-align: center;
+            opacity: 0;
+            /* Start hidden */
+            transition: opacity 0.5s ease-in-out;
+            max-width: 300px;
+            /* Constrain width */
+        }
+
+        .message-box.show {
+            opacity: 1;
+            /* Show */
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            /* Allow wrapping on smaller screens */
+            gap: 15px;
+            margin-bottom: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tool-selection,
+        .color-palette {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            background-color: #f7f7f7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .tool-selection label,
+        .color-palette label {
+            font-weight: bold;
+            color: #555;
+            white-space: nowrap;
+            /* Prevent wrapping */
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #999;
+        }
+
+        .color-swatch.selected {
+            border: 3px solid #3498db;
+            /* Highlight selected color */
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Hide radio buttons visually but keep them functional */
+        .tool-selection input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .tool-selection label.radio-label {
+            background-color: #e9eef2;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #c0d9e7;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            color: #4a5568;
+            font-weight: normal;
+        }
+
+        .tool-selection input[type="radio"]:checked+label.radio-label {
+            background-color: #3498db;
+            /* Active blue */
+            color: white;
+            border-color: #2980b9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        }
+
+        .tool-selection label.radio-label:hover {
+            background-color: #d1e3f3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Interactive Map Editor</h2>
+
+        <div class="controls">
+            <div class="tool-selection">
+                <label>Tool:</label>
+                <input type="radio" id="toolMove" name="editorTool" value="move" checked>
+                <label for="toolMove" class="radio-label">Move Tile</label>
+                <input type="radio" id="toolPaint" name="editorTool" value="paint">
+                <label for="toolPaint" class="radio-label">Paint Tile</label>
+            </div>
+
+            <div class="color-palette" id="colorPalette">
+                <label>Paintbrush:</label>
+                <!-- Color swatches will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <select id="mapSelector">
+            <!-- Options will be populated dynamically by JavaScript -->
+        </select>
+        <canvas id="gameCanvas"></canvas>
+        <div style="display: flex; gap: 15px;">
+            <button id="undoButton">Undo</button>
+            <button id="copyArrayButton">Copy Map Array</button>
+        </div>
+        <div id="messageBox" class="message-box"></div>
+    </div>
+    <script src='js/maps.js'></script> <!-- maps.js contains the maps data -->
+    <script>
+        // Get references to the HTML canvas element and its 2D rendering context.
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get reference to the map selection dropdown.
+        const mapSelector = document.getElementById('mapSelector');
+        // Get reference to the copy button.
+        const copyArrayButton = document.getElementById('copyArrayButton');
+        // Get reference to the undo button.
+        const undoButton = document.getElementById('undoButton');
+        // Get reference to the message box.
+        const messageBox = document.getElementById('messageBox');
+        // Get references to tool radio buttons
+        const toolMoveRadio = document.getElementById('toolMove');
+        const toolPaintRadio = document.getElementById('toolPaint');
+        // Get reference to the color palette container
+        const colorPalette = document.getElementById('colorPalette');
+
+
+        // Variable to hold the name of the currently selected map.
+        let currentMapName = Object.keys(maps)[0]; // Initialize with the first map
+        let currentMapTiles = []; // This will hold the mutable tile data for the currently displayed map.
+
+        // Drag and drop state variables for 'move' tool
+        let isDragging = false;
+        let draggedTileType = -1; // Stores the type of the tile currently being dragged
+        let draggedTileOriginalIndex = -1; // Stores the original index of the dragged tile
+        let draggedTileX = 0; // Current X position of the dragged tile (for drawing)
+        let draggedTileY = 0; // Current Y position of the dragged tile (for drawing)
+        let offsetX = 0; // Offset for where the mouse clicked on the tile (for smooth drag)
+        let offsetY = 0; // Offset for where the mouse clicked on the tile (for smooth drag)
+
+        // Tool state variables
+        let currentMode = 'move'; // 'move' or 'paint'
+        let currentPaintbrushTileType = 0; // Default paintbrush to grass (0)
+
+        // Undo history
+        const historyStack = [];
+        let historyPointer = -1; // -1 means no history, 0 means first state
+
+        /**
+         * Draws the current map onto the canvas.
+         * This function iterates through the tiles array of the current map
+         * and draws a colored rectangle for each tile.
+         */
+        function drawMap() {
+            const mapData = maps[currentMapName];
+            if (!mapData) {
+                console.error(`Map "${currentMapName}" not found.`);
+                return;
+            }
+
+            // Set canvas dimensions based on map size and tile size.
+            canvas.width = mapData.width * TILE_SIZE;
+            canvas.height = mapData.height * TILE_SIZE;
+
+            // Clear the entire canvas before redrawing. This ensures no
+            // previous drawings persist.
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Loop through each row (y-coordinate)
+            for (let y = 0; y < mapData.height; y++) {
+                // Loop through each column (x-coordinate) in the current row
+                for (let x = 0; x < mapData.width; x++) {
+                    // Calculate the 1D index from 2D coordinates (row-major order)
+                    const tileIndex = y * mapData.width + x;
+                    // Get the numerical tile type from the mutable currentMapTiles array
+                    const tileType = currentMapTiles[tileIndex];
+                    // Get the corresponding color for this tile type
+                    const color = getTileColor(tileType);
+
+                    // Set the fill style for the context to the tile's color
+                    ctx.fillStyle = color;
+                    // Draw a filled rectangle representing the tile
+                    // (x_position, y_position, width, height)
+                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+
+            // If a tile is being dragged (in 'move' mode), draw it separately at the mouse position
+            if (isDragging && draggedTileType !== -1 && currentMode === 'move') {
+                ctx.fillStyle = getTileColor(draggedTileType);
+                // Draw with a slight transparency to indicate it's being dragged
+                ctx.globalAlpha = 0.7;
+                ctx.fillRect(draggedTileX - offsetX, draggedTileY - offsetY, TILE_SIZE, TILE_SIZE);
+                ctx.globalAlpha = 1.0; // Reset alpha for other drawings
+            }
+        }
+
+        /**
+         * The main game loop (or rendering loop in this case).
+         * This function is called repeatedly via requestAnimationFrame
+         * to continuously redraw the map, giving a "refreshing view".
+         */
+        function gameLoop() {
+            drawMap(); // Draw the current map
+            // Request the browser to call gameLoop again before the next repaint.
+            // This creates a smooth animation/refreshing effect.
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * Populates the map selection dropdown with options based on the
+         * keys (map names) in the 'maps' object.
+         */
+        function populateMapSelector() {
+            for (const mapName in maps) {
+                const option = document.createElement('option');
+                option.value = mapName;
+                // Format map names nicely for display (e.g., 'forest_left' becomes 'Forest Left')
+                option.textContent = mapName
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, char => char.toUpperCase());
+                mapSelector.appendChild(option);
+            }
+        }
+
+        /**
+         * Populates the color palette with clickable swatches.
+         */
+        function populateColorPalette() {
+            colorPalette.innerHTML = '<label>Paintbrush:</label>'; // Clear existing
+            // Convert tileColors object into an array of [tileType, color] pairs
+            const colorEntries = Object.entries(tileColors);
+
+            colorEntries.forEach(([tileType, color]) => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.dataset.tileType = tileType; // Store the numerical tile type
+                swatch.title = `Tile type: ${tileType}`; // Tooltip
+
+                // Set initial selection
+                if (parseInt(tileType) === currentPaintbrushTileType) {
+                    swatch.classList.add('selected');
+                }
+
+                swatch.addEventListener('click', () => {
+                    currentPaintbrushTileType = parseInt(tileType);
+                    // Update visual selection
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    showMessage(`Paintbrush set to type ${tileType}`, 'success');
+                });
+                colorPalette.appendChild(swatch);
+            });
+            // Initially select the first color in the palette if currentPaintbrushTileType is default 0
+            if (currentPaintbrushTileType === 0 && colorEntries.length > 0) {
+                const defaultSwatch = colorPalette.querySelector(`[data-tile-type="${0}"]`);
+                if (defaultSwatch) {
+                    defaultSwatch.classList.add('selected');
+                }
+            }
+        }
+
+
+        /**
+         * Initializes the map for editing when a new map is selected or on load.
+         * Creates a mutable copy of the original map's tiles.
+         */
+        function initializeMapForEditing(mapName) {
+            currentMapName = mapName;
+            const mapData = maps[currentMapName];
+            if (mapData) {
+                // Create a shallow copy of the tiles array to allow modifications
+                currentMapTiles = [...mapData.tiles];
+                // Ensure canvas size is correctly set for the new map
+                canvas.width = mapData.width * TILE_SIZE;
+                canvas.height = mapData.height * TILE_SIZE;
+
+                // Clear history and add the initial state of the new map
+                historyStack.length = 0; // Clear array
+                historyPointer = -1;
+                recordMapState(); // Save the initial state
+            } else {
+                currentMapTiles = []; // Clear if map not found
+                historyStack.length = 0;
+                historyPointer = -1;
+            }
+            drawMap(); // Draw the newly loaded map
+            updateUndoButtonState();
+        }
+
+        /**
+         * Displays a temporary message in the message box.
+         * @param {string} message The message to display.
+         * @param {string} type The type of message (e.g., 'success', 'error').
+         */
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show'; // Reset and show
+            // Apply type-specific styling
+            if (type === 'success') {
+                messageBox.style.backgroundColor = '#d4edda';
+                messageBox.style.color = '#155724';
+                messageBox.style.borderColor = '#c3e6cb';
+            } else if (type === 'error') {
+                messageBox.style.backgroundColor = '#f8d7da';
+                messageBox.style.color = '#721c24';
+                messageBox.style.borderColor = '#f5c6cb';
+            }
+
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        /**
+         * Saves the current map state to the history stack.
+         * Discards any redo states if a new change is made.
+         */
+        function recordMapState() {
+            // If the history pointer is not at the end of the stack,
+            // it means we have performed undo operations. When a new change occurs,
+            // we discard any "redo" states beyond the current pointer.
+            if (historyPointer < historyStack.length - 1) {
+                historyStack.splice(historyPointer + 1);
+            }
+            // Push a *copy* of the current tile array to the history stack
+            historyStack.push([...currentMapTiles]);
+            historyPointer++;
+            updateUndoButtonState();
+        }
+
+        /**
+         * Handles the undo functionality, reverting to the previous map state.
+         */
+        function undo() {
+            if (historyPointer > 0) {
+                historyPointer--;
+                // Restore previous state by making a new copy from history
+                currentMapTiles = [...historyStack[historyPointer]];
+                drawMap();
+                showMessage('Undo successful!', 'success');
+            } else {
+                showMessage('Nothing to undo!', 'error');
+            }
+            updateUndoButtonState();
+        }
+
+        /**
+         * Updates the enabled/disabled state of the undo button based on history.
+         */
+        function updateUndoButtonState() {
+            undoButton.disabled = historyPointer <= 0;
+        }
+
+        // --- Event Listeners for Interaction ---
+
+        // Event listener for tool selection (radio buttons)
+        toolMoveRadio.addEventListener('change', () => {
+            currentMode = 'move';
+            canvas.style.cursor = 'grab'; // Change cursor for move mode
+            showMessage('Tool: Move Tile', 'success');
+        });
+        toolPaintRadio.addEventListener('change', () => {
+            currentMode = 'paint';
+            canvas.style.cursor = 'crosshair'; // Change cursor for paint mode
+            showMessage('Tool: Paint Tile', 'success');
+        });
+
+
+        canvas.addEventListener('mousedown', (e) => {
+            const mapData = maps[currentMapName];
+            if (!mapData) return; // Cannot interact if no map data
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const tileX = Math.floor(mouseX / TILE_SIZE);
+            const tileY = Math.floor(mouseY / TILE_SIZE);
+            const tileIndex = tileY * mapData.width + tileX;
+
+            // Ensure coordinates are within map bounds
+            if (tileX >= 0 && tileX < mapData.width &&
+                tileY >= 0 && tileY < mapData.height) {
+
+                if (currentMode === 'move') {
+                    draggedTileOriginalIndex = tileIndex;
+                    draggedTileType = currentMapTiles[draggedTileOriginalIndex];
+
+                    // Prevent dragging 'wall' tiles (type 1)
+                    if (draggedTileType === 1) {
+                        showMessage('Cannot drag walls!', 'error');
+                        isDragging = false; // Ensure dragging is off
+                        draggedTileType = -1; // Reset
+                        draggedTileOriginalIndex = -1; // Reset
+                        return;
+                    }
+
+                    isDragging = true;
+                    canvas.classList.add('dragging'); // Change cursor
+                    // Store offset for smooth dragging visual
+                    offsetX = mouseX - (tileX * TILE_SIZE);
+                    offsetY = mouseY - (tileY * TILE_SIZE);
+
+                    // We don't modify currentMapTiles immediately in 'move' mode
+                    // The visual effect of the tile being picked up is handled by drawMap
+                    // and the actual modification happens on mouseup.
+                } else if (currentMode === 'paint') {
+                    const originalTileType = currentMapTiles[tileIndex];
+                    if (originalTileType !== currentPaintbrushTileType) {
+                        recordMapState(); // Save state before painting
+                        currentMapTiles[tileIndex] = currentPaintbrushTileType;
+                        drawMap(); // Immediately redraw after painting
+                        showMessage(`Painted tile at (${tileX}, ${tileY}) to type ${currentPaintbrushTileType}`, 'success');
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || currentMode !== 'move') return;
+
+            const rect = canvas.getBoundingClientRect();
+            draggedTileX = e.clientX - rect.left;
+            draggedTileY = e.clientY - rect.top;
+            // The gameLoop continuously calls drawMap, which uses draggedTileX/Y
+            // to draw the floating tile, creating the drag effect.
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDragging || currentMode !== 'move') return;
+
+            isDragging = false;
+            canvas.classList.remove('dragging'); // Reset cursor
+
+            const mapData = maps[currentMapName];
+            if (!mapData) return;
+
+            // Calculate drop position
+            const rect = canvas.getBoundingClientRect();
+            const dropX = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+            const dropY = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+            const dropIndex = dropY * mapData.width + dropX;
+
+            // Check if the tile was actually moved (not just clicked and released)
+            // and if the drop location is different from the original and within bounds.
+            if (draggedTileOriginalIndex !== -1 &&
+                !(dropX === Math.floor(draggedTileOriginalIndex % mapData.width) &&
+                    dropY === Math.floor(draggedTileOriginalIndex / mapData.width)) &&
+                dropX >= 0 && dropX < mapData.width &&
+                dropY >= 0 && dropY < mapData.height) {
+
+                const targetTileType = currentMapTiles[dropIndex];
+
+                // Prevent dropping on 'wall' tiles (type 1)
+                if (targetTileType === 1) {
+                    currentMapTiles[draggedTileOriginalIndex] = draggedTileType; // Restore original tile
+                    showMessage('Cannot drop on walls! Tile returned to original spot.', 'error');
+                } else {
+                    recordMapState(); // Save state BEFORE performing the swap
+                    currentMapTiles[dropIndex] = draggedTileType; // Place dragged tile
+                    currentMapTiles[draggedTileOriginalIndex] = targetTileType; // Move target tile to original spot
+                    showMessage('Tile moved successfully!', 'success');
+                }
+            } else {
+                // If dropped on the same spot, or outside, or invalid move, restore original tile
+                currentMapTiles[draggedTileOriginalIndex] = draggedTileType;
+                if (!(dropX >= 0 && dropX < mapData.width && dropY >= 0 && dropY < mapData.height)) {
+                    showMessage('Dropped outside map! Tile returned.', 'error');
+                } else if (dropIndex === draggedTileOriginalIndex) {
+                    // Only show message if it was an actual click on the same spot, not a drag-cancel
+                    showMessage('Tile returned to original spot.', 'info');
+                }
+            }
+
+            // Reset dragged tile state
+            draggedTileType = -1;
+            draggedTileOriginalIndex = -1;
+            drawMap(); // Redraw with final positions
+        });
+
+        // Handles cases where the mouse leaves the canvas while dragging.
+        // This prevents the dragged tile from getting "stuck" mid-air.
+        canvas.addEventListener('mouseleave', () => {
+            if (isDragging && currentMode === 'move') {
+                isDragging = false;
+                canvas.classList.remove('dragging');
+                if (draggedTileOriginalIndex !== -1) {
+                    currentMapTiles[draggedTileOriginalIndex] = draggedTileType; // Return tile to original spot
+                }
+                draggedTileType = -1;
+                draggedTileOriginalIndex = -1;
+                drawMap();
+                showMessage('Dragging cancelled: mouse left map!', 'error');
+            }
+        });
+
+
+        // --- Event Listener for Copy Button ---
+        copyArrayButton.addEventListener('click', () => {
+            const mapData = maps[currentMapName];
+            if (!mapData) {
+                showMessage('No map loaded to copy!', 'error');
+                return;
+            }
+
+            // Format the array nicely for copying.
+            // Adding newlines after every `mapData.width` elements
+            let formattedArray = '';
+            for (let i = 0; i < currentMapTiles.length; i++) {
+                formattedArray += currentMapTiles[i];
+                if (i < currentMapTiles.length - 1) {
+                    formattedArray += ', ';
+                }
+                // Add a newline and indentation for readability after each row
+                if ((i + 1) % mapData.width === 0 && i < currentMapTiles.length - 1) {
+                    formattedArray += '\n                    '; // 20 spaces for indentation
+                }
+            }
+
+            // Wrap it in square brackets to make it a valid JS array literal
+            const arrayString = `[\n                    ${formattedArray}\n                ]`;
+
+            // Copy to clipboard
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = arrayString;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showMessage('Map array copied to clipboard!', 'success');
+                } else {
+                    showMessage('Failed to copy map array.', 'error');
+                }
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                showMessage('Error copying map array. Please try manually.', 'error');
+            }
+            document.body.removeChild(tempTextArea);
+        });
+
+        // --- Event Listener for Undo Button ---
+        undoButton.addEventListener('click', undo);
+
+
+        // --- Initialization ---
+
+        // Event listener for map selection change
+        mapSelector.addEventListener('change', (event) => {
+            initializeMapForEditing(event.target.value);
+        });
+
+        // This code runs when the entire HTML document has been loaded and parsed.
+        document.addEventListener('DOMContentLoaded', () => {
+            populateMapSelector(); // Fill the dropdown with map names.
+            populateColorPalette(); // Fill the color palette.
+
+            // Set the dropdown to display the initially selected map.
+            mapSelector.value = currentMapName;
+            // Set the initial tool state (Move Tile)
+            toolMoveRadio.checked = true;
+
+            initializeMapForEditing(currentMapName); // Load and draw the initial map
+            gameLoop(); // Start the continuous drawing loop.
+        });
+    </script>
+</body>
+
+</html>

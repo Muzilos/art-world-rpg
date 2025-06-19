@@ -17,6 +17,6 @@ const gameState = {
   quests: {
     chickenQuest: 'not_started', // Status of the chicken retrieval quest.
     crystalQuest: 'not_started',  // Status of the magical crystal quest.
-    mysteriousNoteQuest: 'not_started' // New: Status of the mysterious note quest.
+    mysteriousNoteQuest: 'not_started' // Status of the mysterious note quest.
   },
 };

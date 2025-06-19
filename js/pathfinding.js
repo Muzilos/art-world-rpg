@@ -11,8 +11,19 @@ function aStar(start, end, map) {
     
     closedSet.add(`${current.x},${current.y}`);
     getNeighbors(current, map).forEach(neighbor => {
+      // Skip if already evaluated
       if (closedSet.has(`${neighbor.x},${neighbor.y}`)) return;
-      
+
+      const isDiagonal = Math.abs(current.x - neighbor.x) === 1 && Math.abs(current.y - neighbor.y) === 1;
+      if (isDiagonal && isDiagonalMovementBlocked(current.x, current.y, neighbor.x, neighbor.y, map)) {
+        return; // Skip this neighbor, it's blocked
+      }
+      // Calculate tentative G score
+      if (isDiagonal) {
+        neighbor.g = current.g + 1.4; // Diagonal movement cost
+      } else {
+        neighbor.g = current.g + 1; // Orthogonal movement cost
+      }
       const tentativeGScore = current.g + 1;
       let neighborNode = openSet.find(n => n.x === neighbor.x && n.y === neighbor.y);
       

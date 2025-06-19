@@ -78,6 +78,8 @@ function update(deltaTime) {
   // If the player has a path and the move timer has expired
   if (gameState.player.path.length > 0 && gameState.player.moveTimer <= 0) {
     gameState.player.moveTimer = gameState.player.speed; // Reset move timer
+    // Clear dialogue box if it was open
+    document.getElementById('dialogueBox').classList.add('hidden');
     const nextStep = gameState.player.path.shift(); // Get the next step in the path
 
     // Move the player to the next tile
@@ -117,8 +119,8 @@ function initializeEventListeners() {
 
   // Event listener for clicks on the game canvas
   canvas.addEventListener('click', (event) => {
-    // If dialogue box is open, prevent further interaction with the canvas
-    if (!document.getElementById('dialogueBox').classList.contains('hidden')) return;
+    // CLose any open dialogue box when clicking on the canvas
+    closeDialogue();
 
     // Get canvas position and calculate clicked tile coordinates
     const rect = canvas.getBoundingClientRect();
@@ -186,6 +188,61 @@ function initializeEventListeners() {
 }
 
 /**
+ * Checks if a diagonal movement is blocked by adjacent non-walkable tiles.
+ * @param {number} currentX - X-coordinate of the starting tile.
+ * @param {number} currentY - Y-coordinate of the starting tile.
+ * @param {number} targetX - X-coordinate of the target diagonal tile.
+ * @param {number} targetY - Y-coordinate of the target diagonal tile.
+ * @param {object} map - The current map object.
+ * @returns {boolean} - True if the diagonal movement is blocked, false otherwise.
+ */
+function isDiagonalMovementBlocked(currentX, currentY, targetX, targetY, map) {
+    // Calculate the difference in coordinates
+    const dx = targetX - currentX;
+    const dy = targetY - currentY;
+
+    // This function only applies to diagonal movements
+    if (Math.abs(dx) !== 1 || Math.abs(dy) !== 1) {
+        return false;
+    }
+
+    // Check the two cardinal tiles that are adjacent to both current and target
+    // These are the "blocking" tiles for diagonal movement.
+    const tile1X = currentX + dx; // Tile in the same column as target, same row as current
+    const tile1Y = currentY;
+
+    const tile2X = currentX;     // Tile in the same row as target, same column as current
+    const tile2Y = currentY + dy;
+
+    // Check if either of these cardinal tiles are non-walkable (type 1 or 2)
+    // You'll need an `isWalkable` helper or direct checks.
+    // Assuming map.tiles is a 1D array representing the map grid.
+    const isTile1Walkable = isWalkable(tile1X, tile1Y, map);
+    const isTile2Walkable = isWalkable(tile2X, tile2Y, map);
+
+    // If both cardinal tiles are non-walkable, the diagonal movement is blocked
+    return !isTile1Walkable && !isTile2Walkable;
+}
+
+/**
+ * Helper function to check if a tile at given coordinates is walkable.
+ * This function is assumed to be used by the pathfinding algorithm.
+ * @param {number} x - X-coordinate of the tile.
+ * @param {number} y - Y-coordinate of the tile.
+ * @param {object} map - The current map object.
+ * @returns {boolean} - True if the tile is walkable, false otherwise.
+ */
+function isWalkable(x, y, map) {
+    // Check map bounds
+    if (x < 0 || x >= map.width || y < 0 || y >= map.height) {
+        return false;
+    }
+    const tileIndex = y * map.width + x;
+    // Assuming tile types 1 and 2 are unwalkable (walls, trees etc.)
+    return map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2;
+}
+
+/**
  * Returns an array of walkable tiles adjacent to a given target tile.
  * This is used to find a tile for the player to move to before interacting.
  * @param {number} targetX - X-coordinate of the target interactive tile.
@@ -208,10 +265,10 @@ function getAdjacentWalkableTiles(targetX, targetY, map) {
       if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height) {
         const tileIndex = newY * map.width + newX;
         // Check if the tile is walkable (not a wall or obstacle)
-        // Assuming tile types 1 and 2 are unwalkable (walls, trees etc.)
-        if (map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2) {
-          walkableTiles.push({ x: newX, y: newY });
-        }
+        isWalkable(newX, newY, map) && !isDiagonalMovementBlocked(targetX, targetY, newX, newY, map) && walkableTiles.push({ x: newX, y: newY });
+        // The isWalkable function checks if the tile is not a wall (type 1 or 2)
+        // The isDiagonalMovementBlocked function checks if the diagonal movement is blocked by adjacent non-walkable tiles
+        // This ensures that the player can only move to tiles that are walkable and not blocked by adjacent obstacles.
       }
     }
   }

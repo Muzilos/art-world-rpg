@@ -93,7 +93,9 @@ function drawMapUI() {
   ctx.fillStyle = '#4a5568'; // Background for HP bar (Tailwind gray-700)
   ctx.fillRect(10, 10, hpBarWidth, hpBarHeight); // Draw background bar
   // Fill HP bar with color based on HP ratio
-  ctx.fillStyle = hpRatio > 0.5 ? '#48bb78' : hpRatio > 0.25 ? '#ed8936' : '#f56565'; // Green, orange, or red
+  // Green if above 50%, orange if above 25%, red if below
+  ctx.fillStyle = hpRatio > 0.5 
+  ? '#000078' : hpRatio > 0.25 ? '#0d8936' : '#056565'; // Blue, orange, or red
   ctx.fillRect(10, 10, hpBarWidth * hpRatio, hpBarHeight); // Draw filled HP bar
 
   ctx.fillStyle = '#e2e8f0'; // Text color (Tailwind gray-200)
