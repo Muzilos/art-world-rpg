@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enhanced 2D RPG Engine</title>
+  <title>Art World RPG</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -32,7 +32,7 @@
 </head>
 
 <body class="flex flex-col items-center justify-center h-screen p-4">
-  <h1 class="text-3xl font-bold mb-4">Enhanced RPG</h1>
+  <h1 class="text-3xl font-bold mb-4">Art World RPG</h1>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <div id="dialogueBox"
@@ -44,10 +44,9 @@
   </div>
 
   <!-- Game Scripts -->
-  <!-- Items script should define any game items, so it should be loaded early if you expand items later -->
-  <script src="js/items.js"></script>
-  <!-- Characters script defines characters and NPCs, should be loaded before state -->
-  <script src="js/characters.js"></script>
+  <!-- Entities -->
+  <!-- Entities script defines entities and NPCs, should be loaded before state -->
+  <script src="js/entities.js"></script>
   <!-- State should be loaded before anything that depends on game state -->
   <script src="js/state.js"></script>
   <!-- Maps defines the game world structure -->

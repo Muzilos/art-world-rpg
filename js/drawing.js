@@ -37,8 +37,8 @@ function draw() {
     );
   }
 
-  // Draw characters (chicken, crystal, and new mysterious figure)
-  (characters[gameState.currentMap] || []).forEach(char => {
+  // Draw entities (chicken, crystal, and new mysterious figure)
+  (entities[gameState.currentMap] || []).forEach(char => {
     let color;
     switch (char.id) {
       case 'chicken':
@@ -51,7 +51,7 @@ function draw() {
         color = '#8b5cf6'; // Purple for mysterious figure (Tailwind violet-500)
         break;
       default:
-        color = 'purple'; // Default for other characters
+        color = 'purple'; // Default for other entities
     }
     ctx.fillStyle = color;
     ctx.beginPath();

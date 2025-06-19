@@ -15,13 +15,13 @@ function isAdjacent(x1, y1, x2, y2) {
 }
 
 /**
- * Determines the appropriate dialogue state for a character based on quest progress.
- * @param {object} character - The character object.
+ * Determines the appropriate dialogue state for a entity based on quest progress.
+ * @param {object} entity - The entity object.
  * @returns {string} - The key for the current dialogue state.
  */
-function getDialogueState(character) {
+function getDialogueState(entity) {
   // Old Man quest for chicken
-  if (character.id === 'old_man') {
+  if (entity.id === 'old_man') {
     const questStatus = gameState.quests.chickenQuest;
     const hasChicken = gameState.player.backpack.includes('chicken');
     if (questStatus === 'rewarded') return 'quest_rewarded';
@@ -30,7 +30,7 @@ function getDialogueState(character) {
   }
 
   // Merchant quest for crystal
-  if (character.id === 'merchant') {
+  if (entity.id === 'merchant') {
     const questStatus = gameState.quests.crystalQuest;
     const hasCrystal = gameState.player.backpack.includes('crystal');
     if (questStatus === 'rewarded') return 'quest_rewarded';
@@ -39,7 +39,7 @@ function getDialogueState(character) {
   }
 
   // New Quest: Mysterious Note
-  if (character.id === 'mysterious_figure') {
+  if (entity.id === 'mysterious_figure') {
     const questStatus = gameState.quests.mysteriousNoteQuest;
     const hasNote = gameState.player.backpack.includes('mysterious_note');
     if (questStatus === 'rewarded') return 'quest_rewarded';
@@ -136,16 +136,16 @@ function initializeEventListeners() {
 
     const map = maps[gameState.currentMap]; // Get current map data
 
-    // Check for character interaction
-    const character = (characters[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
-    if (character) {
+    // Check for entity interaction
+    const entity = (entities[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
+    if (entity) {
       gameState.clickMarker.type = 'interactive'; // Mark as interactive
-      // If the character is adjacent, show dialogue. Otherwise, move to an adjacent tile.
+      // If the entity is adjacent, show dialogue. Otherwise, move to an adjacent tile.
       if (isAdjacent(gameState.player.x, gameState.player.y, tileX, tileY)) {
-        const dialogueState = getDialogueState(character);
-        showDialogue(character, dialogueState);
+        const dialogueState = getDialogueState(entity);
+        showDialogue(entity, dialogueState);
       } else {
-        // Find the closest adjacent walkable tile to the character for movement
+        // Find the closest adjacent walkable tile to the entity for movement
         const adjacentTiles = getAdjacentWalkableTiles(tileX, tileY, map);
         if (adjacentTiles.length > 0) {
           const closestTile = adjacentTiles.sort((a, b) => {
@@ -160,7 +160,7 @@ function initializeEventListeners() {
           }
         }
       }
-      return; // Stop further processing after character interaction
+      return; // Stop further processing after entity interaction
     }
 
     // Check for transition markers (doors)
