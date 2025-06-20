@@ -118,19 +118,24 @@ function checkTransition() {
  * Initializes all necessary event listeners for user interaction.
  */
 function initializeEventListeners() {
-    // Get references to UI overlay elements
+  // Get references to UI overlay elements
   let statsPanelElement = document.getElementById('statsPanel');
   let toggleButtonElement = document.getElementById('toggleStatsPanel'); // Assuming a toggle button exists
 
   // Event listener for closing the dialogue box
   document.getElementById('closeDialogue').addEventListener('click', closeDialogue);
 
-    // Add event listener for the stats panel toggle button
+  // Add event listener for the stats panel toggle button
   // This assumes you have a button with id="toggleStatsPanel" in your HTML
   if (toggleButtonElement) {
     toggleButtonElement.addEventListener('click', () => {
       gameState.ui.statsPanelCollapsed = !gameState.ui.statsPanelCollapsed;
-      // The updateUIOverlay function will handle updating the class based on this state
+      const panel = document.getElementById('statsPanel');
+      if (gameState.ui.statsPanelCollapsed) {
+        panel.classList.add('collapsed');
+      } else {
+        panel.classList.remove('collapsed');
+      }
     });
   } else {
     console.warn("Toggle button element with id 'toggleStatsPanel' not found.");
@@ -146,12 +151,12 @@ function initializeEventListeners() {
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-        // Check if the click occurred within the stats panel DOM element
+    // Check if the click occurred within the stats panel DOM element
     const statsPanel = statsPanelElement;
     if (statsPanel) {
       const statsPanelRect = statsPanel.getBoundingClientRect();
       if (event.clientX >= statsPanelRect.left && event.clientX <= statsPanelRect.right &&
-          event.clientY >= statsPanelRect.top && event.clientY <= statsPanelRect.bottom) {
+        event.clientY >= statsPanelRect.top && event.clientY <= statsPanelRect.bottom) {
         // Click was inside the stats panel, do NOT process as a game click
         return;
       }
@@ -210,8 +215,8 @@ function initializeEventListeners() {
         if (path.length > 0) {
           path.shift(); // Remove starting position (player's current tile)
           gameState.player.path = path;
-        gameState.player.moveTimer = 0;
-      }
+          gameState.player.moveTimer = 0;
+        }
         return; // Stop further processing after transition interaction
       }
     }
@@ -236,31 +241,31 @@ function initializeEventListeners() {
  * @returns {boolean} - True if the diagonal movement is blocked, false otherwise.
  */
 function isDiagonalMovementBlocked(currentX, currentY, targetX, targetY, map) {
-    // Calculate the difference in coordinates
-    const dx = targetX - currentX;
-    const dy = targetY - currentY;
+  // Calculate the difference in coordinates
+  const dx = targetX - currentX;
+  const dy = targetY - currentY;
 
-    // This function only applies to diagonal movements
-    if (Math.abs(dx) !== 1 || Math.abs(dy) !== 1) {
-        return false;
-    }
+  // This function only applies to diagonal movements
+  if (Math.abs(dx) !== 1 || Math.abs(dy) !== 1) {
+    return false;
+  }
 
-    // Check the two cardinal tiles that are adjacent to both current and target
-    // These are the "blocking" tiles for diagonal movement.
-    const tile1X = currentX + dx; // Tile in the same column as target, same row as current
-    const tile1Y = currentY;
+  // Check the two cardinal tiles that are adjacent to both current and target
+  // These are the "blocking" tiles for diagonal movement.
+  const tile1X = currentX + dx; // Tile in the same column as target, same row as current
+  const tile1Y = currentY;
 
-    const tile2X = currentX;     // Tile in the same row as target, same column as current
-    const tile2Y = currentY + dy;
+  const tile2X = currentX;     // Tile in the same row as target, same column as current
+  const tile2Y = currentY + dy;
 
-    // Check if either of these cardinal tiles are non-walkable (type 1 or 2)
-    // You'll need an `isWalkable` helper or direct checks.
-    // Assuming map.tiles is a 1D array representing the map grid.
-    const isTile1Walkable = isWalkable(tile1X, tile1Y, map);
-    const isTile2Walkable = isWalkable(tile2X, tile2Y, map);
+  // Check if either of these cardinal tiles are non-walkable (type 1 or 2)
+  // You'll need an `isWalkable` helper or direct checks.
+  // Assuming map.tiles is a 1D array representing the map grid.
+  const isTile1Walkable = isWalkable(tile1X, tile1Y, map);
+  const isTile2Walkable = isWalkable(tile2X, tile2Y, map);
 
-    // If both cardinal tiles are non-walkable, the diagonal movement is blocked
-    return !isTile1Walkable && !isTile2Walkable;
+  // If both cardinal tiles are non-walkable, the diagonal movement is blocked
+  return !isTile1Walkable && !isTile2Walkable;
 }
 
 /**
@@ -272,13 +277,13 @@ function isDiagonalMovementBlocked(currentX, currentY, targetX, targetY, map) {
  * @returns {boolean} - True if the tile is walkable, false otherwise.
  */
 function isWalkable(x, y, map) {
-    // Check map bounds
-    if (x < 0 || x >= map.width || y < 0 || y >= map.height) {
-        return false;
-    }
-    const tileIndex = y * map.width + x;
-    // Assuming tile types 1 and 2 are unwalkable (walls, trees etc.)
-    return map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2;
+  // Check map bounds
+  if (x < 0 || x >= map.width || y < 0 || y >= map.height) {
+    return false;
+  }
+  const tileIndex = y * map.width + x;
+  // Assuming tile types 1 and 2 are unwalkable (walls, trees etc.)
+  return map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2;
 }
 
 /**

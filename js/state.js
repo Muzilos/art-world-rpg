@@ -1,3 +1,15 @@
+// Skill abbreviations mapping
+const skillAbbreviations = {
+  vitality: { abbr: 'VIT', icon: '❤️' },
+  reputation: { abbr: 'REP', icon: '⭐' },
+  strength: { abbr: 'STR', icon: '💪' },
+  dexterity: { abbr: 'DEX', icon: '🎯' },
+  intelligence: { abbr: 'INT', icon: '🧠' },
+  creativity: { abbr: 'CRE', icon: '🎨' },
+  stealth: { abbr: 'STL', icon: '👤' },
+  speed: { abbr: 'SPD', icon: '⚡' }
+};
+
 // The central game state object, holding all dynamic data of the game.
 const gameState = {
   currentMap: 'town', // The ID of the currently active map.

@@ -6,148 +6,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Art World RPG</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background-color: #1a202c;
-      /* Tailwind gray-900 */
-      color: #e2e8f0;
-      /* Tailwind gray-200 */
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    canvas {
-      background-color: #2d3748;
-      /* Tailwind gray-800 */
-      border: 2px solid #4a5568;
-      /* Tailwind gray-600 */
-      border-radius: 0.5rem;
-    }
-
-    .dialogue-box {
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    /* Stats Panel Styles */
-    #statsPanel {
-      position: absolute;
-      top: 60px;
-      /* Adjust as needed, below HP bar */
-      left: 10px;
-      background-color: rgba(45, 55, 72, 0.85);
-      /* Tailwind gray-800 with some transparency */
-      border: 1px solid #4a5568;
-      /* Tailwind gray-600 */
-      border-radius: 0.375rem;
-      /* Tailwind rounded-md */
-      padding: 8px;
-      color: #e2e8f0;
-      /* Tailwind gray-200 */
-      font-size: 12px;
-      width: 200px;
-      /* Adjust as needed */
-      z-index: 10;
-      /* Ensure it's above the canvas but below modals if any */
-      transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-      /* Smooth collapse */
-      overflow: hidden;
-      /* Important for collapse animation */
-    }
-
-    #statsPanel.collapsed #skillList,
-    #statsPanel.collapsed #backpackList {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      margin-top: 0;
-      margin-bottom: 0;
-      visibility: hidden;
-      /* Hide content when collapsed */
-    }
-
-    #toggleStatsPanel {
-      background-color: #4a5568;
-      /* Tailwind gray-700 */
-      color: #e2e8f0;
-      /* Tailwind gray-200 */
-      border: none;
-      padding: 2px 6px;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-size: 10px;
-      margin-bottom: 5px;
-    }
-
-    #toggleStatsPanel:hover {
-      background-color: #718096;
-      /* Tailwind gray-600 */
-    }
-
-    /* By default, hide the XP information */
-    .skill-item .xp-info {
-      display: none;
-      /* You can add other styling here for when it's visible, like color or font style */
-      /* For example: color: #888; */
-    }
-
-    /* When the .skill-item (the whole line) is hovered, display the .xp-info span */
-    .skill-item:hover .xp-info {
-      display: inline;
-      /* Or 'inline-block' or 'block' depending on desired layout */
-    }
-
-    .skill-item .xp-info {
-      display: none;
-      /* Hidden by default */
-      margin-left: 5px;
-      color: #a0aec0;
-      /* Tailwind gray-500 */
-    }
-
-    .skill-item:hover .xp-info {
-      display: inline;
-      /* Show on hover */
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="flex flex-col items-center justify-center h-screen p-4">
-  <h1 class="text-3xl font-bold mb-4">Art World RPG</h1>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-  <!-- Stats Panel Overlay -->
-  <div id="statsPanel">
-    <button id="toggleStatsPanel">Toggle Stats</button>
-    <div id="skillList" class="space-y-1"></div>
-    <div id="backpackList" class="mt-2 space-y-0.5"></div>
+<body>
+  <!-- Game Header -->
+  <div class="game-header">
+    <h1>🎨 Art World RPG</h1>
   </div>
 
-  <div id="dialogueBox"
-    class="absolute dialogue-box w-11/12 md:w-3/4 bg-gray-800 border-2 border-gray-600 rounded-lg p-4 hidden">
-    <p id="dialogueText" class="text-lg"></p>
-    <div id="dialogueOptions" class="mt-4 flex flex-col space-y-2"></div>
-    <button id="closeDialogue"
-      class="mt-4 px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 hidden">Close</button>
+  <!-- Main Game Layout -->
+  <div class="game-main">
+    <!-- Game Canvas Container -->
+    <div class="game-canvas-container">
+      <div class="loading-screen hidden" id="loadingScreen">
+        <div class="loader"></div>
+      </div>
+
+      <!-- Game Canvas -->
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+      <!-- Dialogue Overlay (positioned over canvas) -->
+      <div class="dialogue-overlay hidden" id="dialogueBox">
+        <div class="dialogue-text" id="dialogueText"></div>
+        <div id="dialogueOptions"></div>
+        <button class="close-button hidden" id="closeDialogue">Close</button>
+      </div>
+    </div>
+
+    <!-- Right Sidebar with UI Panels -->
+    <div class="game-sidebar">
+      <!-- HP Panel -->
+      <div class="sidebar-panel hp-panel">
+        <div class="panel-header">
+          ❤️ Health
+        </div>
+        <div class="hp-bar">
+          <div class="hp-fill" id="hpFill" style="width: 100%;"></div>
+          <div class="hp-text" id="hpText">100/100</div>
+        </div>
+      </div>
+
+      <!-- Backpack Panel -->
+      <div class="sidebar-panel backpack-panel">
+        <div class="panel-header">
+          🎒 Inventory
+        </div>
+        <div id="backpackList">
+          <div class="backpack-item">Canvas (x3)</div>
+          <div class="backpack-item">Paint Brush</div>
+          <div class="backpack-item">Art Supplies</div>
+        </div>
+      </div>
+
+      <!-- Stats Panel -->
+      <div class="sidebar-panel stats-panel" id="statsPanel">
+        <div class="panel-header">
+          📊 Skills
+        </div>
+        <button class="stats-toggle" id="toggleStatsPanel">Toggle Details</button>
+        <div class="collapsible-content" id="statsContent">
+          <div id="skillList">
+            <!-- Skill rows will be dynamically generated here -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Game Scripts -->
-  <!-- Entities -->
-  <!-- Entities script defines entities and NPCs, should be loaded before state -->
   <script src="js/entities.js"></script>
-  <!-- State should be loaded before anything that depends on game state -->
   <script src="js/state.js"></script>
-  <!-- Maps defines the game world structure -->
   <script src="js/maps.js"></script>
-  <!-- Pathfinding provides the A* algorithm -->
   <script src="js/pathfinding.js"></script>
-  <!-- Drawing handles all rendering to the canvas -->
   <script src="js/drawing.js"></script>
-  <!-- UI handles dialogue and other user interface elements -->
   <script src="js/ui.js"></script>
-  <!-- Main contains the game loop and event listeners, should be loaded last -->
   <script src="js/main.js"></script>
 
+  <script>
+    // Remove the demo functionality - your existing JavaScript will handle this
+    // The toggleStatsPanel button and statsPanel elements now have the correct IDs
+    // for your existing event listeners to work properly
+  </script>
 </body>
 
 </html>

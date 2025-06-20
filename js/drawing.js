@@ -75,102 +75,80 @@ function draw() {
   );
   ctx.fill();
 
-  // Draw UI elements on top of the map
-  drawMapUI();
 }
 
-/**
- * Draws the player's UI elements (HP, Level, XP, Backpack) on the canvas.
- */
-function drawMapUI() {
-
-  // Health bar
-  const hpBarWidth = 120;
-  const hpBarHeight = 12;
-  const stats = gameState.player.stats; // Get player stats
-  const hpRatio = stats.hp / stats.maxHp; // Current HP ratio
-
-  ctx.fillStyle = '#4a5568'; // Background for HP bar (Tailwind gray-700)
-  ctx.fillRect(10, 10, hpBarWidth, hpBarHeight); // Draw background bar
-  // Fill HP bar with color based on HP ratio
-  // Green if above 50%, orange if above 25%, red if below
-  ctx.fillStyle = hpRatio > 0.5
-    ? '#000078' : hpRatio > 0.25 ? '#0d8936' : '#056565'; // Blue, orange, or red
-  ctx.fillRect(10, 10, hpBarWidth * hpRatio, hpBarHeight); // Draw filled HP bar
-
-  ctx.fillStyle = '#e2e8f0'; // Text color (Tailwind gray-200)
-  ctx.font = '12px Courier New'; // Font for UI text
-  ctx.fillText(`HP: ${stats.hp}/${stats.maxHp}`, 10, 35); // Display HP text
-
-  // Skill and Backpack UI is now handled by a separate DOM overlay.
-  // The updateUIOverlay function is responsible for updating the content
-  // and visibility of the DOM elements based on gameState.ui.statsPanelCollapsed.
-}
 
 /**
  * Updates the content and visibility of the DOM-based UI overlay elements.
  * This includes the stats panel (skills, backpack).
  */
 function updateUIOverlay() {
-  // Ensure UI elements are referenced (should be done in initializeEventListeners)
-  const statsPanel = document.getElementById('statsPanel');
-  const skillList = document.getElementById('skillList');
-  const backpackList = document.getElementById('backpackList');
+  updateHPBar();
+  updateStatsPanel();
+  updateBackpackPanel();
+}
 
-  if (!statsPanel || !skillList || !backpackList) {
-    // console.error("UI overlay elements not found!"); // Avoid spamming console if elements aren't ready
-    return; // Cannot update if elements aren't referenced yet
-  }
-
-  // Toggle collapsed class on the stats panel container
-  if (gameState.ui.statsPanelCollapsed) {
-    statsPanel.classList.add('collapsed');
-  } else {
-    statsPanel.classList.remove('collapsed');
-  }
-
-  // Update Skill List content (always update, CSS handles visibility/hover)
+function updateHPBar() {
   const stats = gameState.player.stats;
-  const skillNames = Object.keys(stats.skills); // Get skill names
-  skillList.innerHTML = ''; // Clear current list
-  skillNames.forEach((skill) => {
-    const skillData = stats.skills[skill];
-    // Create a container for each skill to handle hover
-    const skillElement = document.createElement('div');
-    skillElement.classList.add('skill-item'); // Add a class for styling/hover
-    const nameSpan = document.createElement('span');
-    const capitalizedSkill = skill.charAt(0).toUpperCase() + skill.slice(1);
-    nameSpan.textContent = `${capitalizedSkill}: Level ${skillData.level}`;
+  const hpRatio = stats.hp / stats.maxHp;
 
-    // Add a space node for better visual separation before the XP info when it appears
-    nameSpan.appendChild(document.createTextNode(' '));
+  const hpFill = document.getElementById('hpFill');
+  const hpText = document.getElementById('hpText');
 
-    const xpSpan = document.createElement('span');
-    xpSpan.classList.add('xp-info');
-    xpSpan.textContent = `(XP: ${skillData.xp}/${skillData.xpToNextLevel})`;
+  hpFill.style.width = (hpRatio * 100) + '%';
+  hpText.textContent = `${stats.hp}/${stats.maxHp}`;
 
-    skillElement.appendChild(nameSpan);
-    skillElement.appendChild(xpSpan);
-    skillList.appendChild(skillElement);
-  });
-
-  // Backpack content
-  backpackList.innerHTML = ''; // Clear current list
-  const backpackItems = gameState.player.backpack;
-  const backpackHeader = document.createElement('div');
-  backpackHeader.textContent = 'Backpack:';
-  backpackList.appendChild(backpackHeader);
-
-  if (backpackItems.length === 0) {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.classList.add('empty-backpack'); // Add class for styling
-    emptyMessage.textContent = '(empty)';
-    backpackList.appendChild(emptyMessage);
+  // Color based on HP level
+  if (hpRatio > 0.6) {
+    hpFill.style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
+  } else if (hpRatio > 0.3) {
+    hpFill.style.background = 'linear-gradient(90deg, #ed8936, #dd6b20)';
   } else {
-    backpackItems.forEach((item) => {
-      const itemElement = document.createElement('div');
-      itemElement.textContent = `• ${item.charAt(0).toUpperCase() + item.slice(1).replace(/_/g, ' ')}`;
-      backpackList.appendChild(itemElement);
+    hpFill.style.background = 'linear-gradient(90deg, #f56565, #e53e3e)';
+  }
+}
+
+function updateStatsPanel() {
+  const skillList = document.getElementById('skillList');
+  const stats = gameState.player.stats;
+
+  skillList.innerHTML = '';
+
+  Object.keys(stats.skills).forEach(skill => {
+    const skillData = stats.skills[skill];
+    const abbrev = skillAbbreviations[skill];
+
+    const skillRow = document.createElement('div');
+    skillRow.className = 'skill-row';
+
+    skillRow.innerHTML = `
+          <span class="skill-name">${abbrev.icon} ${abbrev.abbr}</span>
+          <span class="skill-level">L${skillData.level}</span>
+          <span class="skill-xp">${skillData.xp}/${skillData.xpToNextLevel}</span>
+        `;
+
+    skillList.appendChild(skillRow);
+  });
+}
+
+function updateBackpackPanel() {
+  const backpackList = document.getElementById('backpackList');
+  const backpack = gameState.player.backpack;
+
+  backpackList.innerHTML = '';
+
+  if (backpack.length === 0) {
+    const emptyDiv = document.createElement('div');
+    emptyDiv.textContent = 'Empty';
+    emptyDiv.style.opacity = '0.6';
+    emptyDiv.style.fontStyle = 'italic';
+    backpackList.appendChild(emptyDiv);
+  } else {
+    backpack.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'backpack-item';
+      itemDiv.textContent = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      backpackList.appendChild(itemDiv);
     });
   }
 }
