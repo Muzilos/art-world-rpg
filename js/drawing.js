@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 let previousStats = null;
 let previousBackpack = null;
 let previousHP = null;
+let previousMoney = null;
 
 /**
  * Draws all game elements onto the canvas.
@@ -40,32 +41,36 @@ function draw() {
     );
   }
 
-  // Draw entities (chicken, crystal, and new mysterious figure)
+  // Draw entities (gallery owner, supply store owner, barista, master artist)
   (entities[gameState.currentMap] || []).forEach(char => {
     let color;
     switch (char.id) {
-      case 'chicken':
-        color = '#ffffff'; // White for chicken
+      case 'gallery_owner':
+        color = '#8b5cf6'; // Purple for gallery owner
         break;
-      case 'crystal':
-        color = '#fbbf24'; // Amber for crystal
+      case 'supply_store_owner':
+        color = '#f59e0b'; // Amber for supply store owner
         break;
-      case 'mysterious_figure':
-        color = '#8b5cf6'; // Purple for mysterious figure (Tailwind violet-500)
+      case 'barista':
+        color = '#8b4513'; // Brown for barista
+        break;
+      case 'master_artist':
+        color = '#dc2626'; // Red for master artist
         break;
       default:
-        color = 'purple'; // Default for other entities
+        color = '#6b7280'; // Default gray
     }
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(
-      char.x * TILE_SIZE + TILE_SIZE / 2, // Center X
-      char.y * TILE_SIZE + TILE_SIZE / 2, // Center Y
-      TILE_SIZE / 2 - 2, // Radius, slightly smaller than tile
-      0, Math.PI * 2 // Full circle
+      char.x * TILE_SIZE + TILE_SIZE / 2,
+      char.y * TILE_SIZE + TILE_SIZE / 2,
+      TILE_SIZE / 2 - 2,
+      0, Math.PI * 2
     );
     ctx.fill();
   });
+
 
   // Draw player
   ctx.fillStyle = 'red'; // Player color
@@ -87,6 +92,8 @@ function draw() {
  */
 function updateUIOverlay() {
   updateHPBar();
+  updateMoneyDisplay();
+  // Update stats and backpack panels only if they have changed
   updateStatsPanel();
   updateBackpackPanel();
 }
@@ -114,6 +121,18 @@ function updateHPBar() {
     }
 
     previousHP = { ...currentHP };
+  }
+}
+
+function updateMoneyDisplay() {
+  const currentMoney = gameState.player.money;
+
+  if (!previousMoney || previousMoney !== currentMoney) {
+    const moneyText = document.getElementById('moneyText');
+    if (moneyText) {
+      moneyText.textContent = `$${currentMoney}`;
+    }
+    previousMoney = currentMoney;
   }
 }
 
@@ -150,22 +169,24 @@ function updateBackpackPanel() {
   const backpack = gameState.player.backpack;
   const currentBackpack = JSON.stringify(backpack);
 
-  // Only update if backpack has changed
   if (previousBackpack !== currentBackpack) {
     const backpackList = document.getElementById('backpackList');
     backpackList.innerHTML = '';
 
-    if (backpack.length === 0) {
+    const itemKeys = Object.keys(backpack);
+    if (itemKeys.length === 0) {
       const emptyDiv = document.createElement('div');
       emptyDiv.textContent = 'Empty';
       emptyDiv.style.opacity = '0.6';
       emptyDiv.style.fontStyle = 'italic';
       backpackList.appendChild(emptyDiv);
     } else {
-      backpack.forEach(item => {
+      itemKeys.forEach(item => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'backpack-item';
-        itemDiv.textContent = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const displayName = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const quantity = backpack[item];
+        itemDiv.textContent = quantity !== 1 ? `${displayName} (${quantity})` : displayName;
         backpackList.appendChild(itemDiv);
       });
     }

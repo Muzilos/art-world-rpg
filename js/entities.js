@@ -1,6 +1,4 @@
-// --- Common Dialogue/State Actions Abstraction ---
-// Define the structure and parameters for each gameAction.
-// This serves as the schema for the editor's UI and for parsing/exporting.
+// Enhanced game actions for art world
 const gameActionMetadata = {
   none: {
     name: 'None',
@@ -16,6 +14,14 @@ const gameActionMetadata = {
   },
   removeItemFromBackpack: {
     name: 'Remove Item from Backpack',
+    parameters: [{
+      name: 'item',
+      type: 'text',
+      label: 'Item ID'
+    }]
+  },
+  hasItem: {
+    name: 'Check if Item in Backpack',
     parameters: [{
       name: 'item',
       type: 'text',
@@ -77,6 +83,34 @@ const gameActionMetadata = {
       { name: 'nextState', type: 'text', label: 'Next Dialogue State (optional)', defaultValue: 'end' }
     ]
   },
+  addMoney: {
+    name: 'Add Money',
+    parameters: [{
+      name: 'amount',
+      type: 'number',
+      label: 'Amount',
+      defaultValue: 0
+    }]
+  },
+  spendMoney: {
+    name: 'Spend Money',
+    parameters: [{
+      name: 'amount',
+      type: 'number',
+      label: 'Amount',
+      defaultValue: 0
+    }]
+  },
+  restoreEnergy: {
+    name: 'Restore Energy',
+    parameters: [{
+      name: 'amount',
+      type: 'number',
+      label: 'Amount',
+      defaultValue: 0
+    }]
+  },
+
   customAction: { // For raw JavaScript code input
     name: 'Custom JavaScript',
     parameters: [{
@@ -87,28 +121,20 @@ const gameActionMetadata = {
   }
 };
 
-// --- Game Actions Definition ---
-// This object contains all game actions, which can be executed in the game.
 const gameActions = {
-  /**
-   * Awards XP to the player and handles level-ups.
-   * @param {number} amount The amount of XP to gain.
-   */
   gainXp: (amounts, skills) => (currentState) => {
-    // Ensure amounts and skills have the same length for one-to-one mapping
     if (amounts.length !== skills.length) {
       console.error("Error: The 'amounts' and 'skills' arrays must have the same number of elements.");
-      return false; // Indicate failure
+      return false;
     }
 
     for (let i = 0; i < amounts.length; i++) {
       const amount = amounts[i];
       const skill = skills[i];
 
-      // Check if the skill exists in player.stats to prevent errors
       if (!currentState.player.stats.skills[skill]) {
         console.warn(`Warning: Skill '${skill}' not found in player stats. Skipping XP gain for this skill.`);
-        continue; // Skip to the next skill if it doesn't exist
+        continue;
       }
 
       currentState.player.stats.skills[skill].xp += amount;
@@ -119,22 +145,20 @@ const gameActions = {
         currentState.player.stats.skills[skill].xp -= currentState.player.stats.skills[skill].xpToNextLevel;
         currentState.player.stats.skills[skill].xpToNextLevel = Math.floor(currentState.player.stats.skills[skill].xpToNextLevel * 1.5);
 
-        if (skill === 'vitality') {
-          // Increase max HP on vitality level-up
-          currentState.player.stats.maxHp += 10 * currentState.player.stats.vitality.level;
-          currentState.player.stats.hp = currentState.player.stats.maxHp; // Heal to full HP
+        if (skill === 'endurance') {
+          currentState.player.maxEnergy += 10;
+          currentState.player.energy = currentState.player.maxEnergy;
         }
 
         console.log(`Leveled up ${skill} to Level ${currentState.player.stats.skills[skill].level}.`);
 
-        // Using showDialogue for level-up notification
         showDialogue({
           id: 'game_system',
           dialogue: {
             'level_up': {
-              text: `You leveled up ${skill} to Level ${currentState.player.stats.skills[skill].level}!`,
+              text: `Your ${skill} skill improved to Level ${currentState.player.stats.skills[skill].level}! You feel more confident in your artistic abilities.`,
               options: [{
-                text: "Awesome!",
+                text: "Great!",
                 nextState: 'end'
               }]
             }
@@ -142,190 +166,181 @@ const gameActions = {
         }, 'level_up');
       }
     }
-    return true; // Indicate successful XP gain
+    return true;
   },
 
-  /**
-   * Removes an entity from a specific map.
-   * @param {string} mapId The ID of the map the entity is on.
-   * @param {string} entityId The ID of the entity to remove.
-   */
-  removeEntity: (mapId, entityId) => (currentState, currentEntities) => { // Added parameters for simulation
+  addMoney: (amount) => (currentState) => {
+    currentState.player.money += amount;
+    console.log(`Gained $${amount}. Current money: $${currentState.player.money}`);
+    return true;
+  },
+
+  spendMoney: (amount) => (currentState) => {
+    if (currentState.player.money >= amount) {
+      currentState.player.money -= amount;
+      console.log(`Spent $${amount}. Remaining money: $${currentState.player.money}`);
+      return true;
+    } else {
+      console.warn(`Not enough money. Need $${amount}, have $${currentState.player.money}`);
+      return false;
+    }
+  },
+
+  restoreEnergy: (amount) => (currentState) => {
+    currentState.player.energy = Math.min(currentState.player.maxEnergy, currentState.player.energy + amount);
+    console.log(`Restored ${amount} energy. Current energy: ${currentState.player.energy}`);
+    return true;
+  },
+
+  // Existing actions with updated names
+  removeEntity: (mapId, entityId) => (currentState, currentEntities) => {
     if (currentEntities[mapId]) {
       currentEntities[mapId] = currentEntities[mapId].filter(e => e.id !== entityId);
       console.log(`Removed entity '${entityId}' from map '${mapId}'.`);
-    }
-    else {
+    } else {
       console.warn(`Map '${mapId}' not found. Cannot remove entity '${entityId}'.`);
     }
-    return true; // Indicate successful removal
+    return true;
   },
 
-  /**
-   * Adds an item to the player's backpack.
-   * @param {string} item The name of the item to add.
-   */
-  addItemToBackpack: (item) => (currentState) => { // Added parameters for simulation
-    currentState.player.backpack.push(item);
-    console.log(`Added '${item}' to backpack.`);
-    return true; // Indicate successful addition
-  },
-
-  /**
-   * Removes an item from the player's backpack.
-   * @param {string} item The name of the item to remove.
-   */
-  removeItemFromBackpack: (item) => (currentState) => { // Added parameters for simulation
-    if (!currentState.player.backpack.includes(item)) {
-      console.warn(`Item '${item}' not found in backpack. Cannot remove.`);
-      return false; // Indicate failure to remove
+  addItemToBackpack: (item, quantity = 1) => (currentState) => {
+    if (currentState.player.backpack[item]) {
+      currentState.player.backpack[item] += quantity;
+    } else {
+      currentState.player.backpack[item] = quantity;
     }
-    currentState.player.backpack = currentState.player.backpack.filter(i => i !== item);
-    console.log(`Removed '${item}' from backpack.`);
-    return true; // Indicate successful removal
+    console.log(`Added ${quantity}x '${item}' to backpack. Total: ${currentState.player.backpack[item]}`);
+    return true;
   },
 
-  /**
-   * Changes the state of a quest.
-   * @param {string} questId The ID of the quest to change.
-   * @param {string} newState The new state for the quest (e.g., 'accepted', 'completed', 'rewarded').
-   */
-  changeQuestState: (questId, newState) => (currentState) => { // Added parameters for simulation
+  removeItemFromBackpack: (item, quantity = 1) => (currentState) => {
+    if (!currentState.player.backpack[item] || currentState.player.backpack[item] < quantity) {
+      console.warn(`Not enough '${item}' in backpack. Need ${quantity}, have ${currentState.player.backpack[item] || 0}`);
+      return false;
+    }
+
+    currentState.player.backpack[item] -= quantity;
+    if (currentState.player.backpack[item] <= 0) {
+      delete currentState.player.backpack[item];
+    }
+
+    console.log(`Removed ${quantity}x '${item}' from backpack.`);
+    return true;
+  },
+
+  hasItem: (item, quantity = 1) => (currentState) => {
+    return currentState.player.backpack[item] >= quantity;
+  },
+
+  changeQuestState: (questId, newState) => (currentState) => {
     if (currentState.quests.hasOwnProperty(questId)) {
       currentState.quests[questId] = newState;
       console.log(`Quest '${questId}' state changed to '${newState}'.`);
-    }
-    else {
+    } else {
       console.warn(`Quest '${questId}' not found. Cannot change state.`);
-      return false; // Indicate failure to change state
+      return false;
     }
-    return true; // Indicate successful state change
+    return true;
   },
 
-  /**
-   * Applies a stat boost to the player.
-   * @param {string} stat The stat to boost (e.g., 'attack', 'defense', 'maxHp').
-   * @param {number} amount The amount to increase the stat by.
-   */
-  boostStat: (stat, amount) => (currentState) => { // Added parameters for simulation
-    if (currentState.player.stats.skills.hasOwnProperty(stat)) {
-      currentState.player.stats.skills[stat].value += amount;
-      console.log(`Player ${stat} increased by ${amount}. New ${stat}: ${currentState.player.stats.skills[stat].value}`);
-      return true; // Indicate successful stat boost
-    }
-    return false; // Indicate failure to boost stat
-  },
-
-  /**
-   * Displays a game system hint or message.
-   * @param {string} message The message to display.
-   * @param {string} nextState The next dialogue state after the hint (optional).
-   */
-  showGameSystemHint: (message, nextState = 'end') => (currentState, currentEntities) => { // Added parameters for simulation
+  showGameSystemHint: (message, nextState = 'end') => (currentState, currentEntities) => {
     showDialogue({
       id: 'game_system',
       dialogue: {
         'hint': {
           text: message,
           options: [{
-            text: "Okay.",
+            text: "Got it.",
             nextState: nextState
           }]
         }
       }
     }, 'hint');
-    return true; // Indicate successful hint display
-  },
+    return true;
+  }
 };
 
-// Definitions of entities for each map, including their positions and dialogue trees.
-// This `entities` object will be the source of truth for the editor, mutable.
+// Art World entities with appropriate dialogue and quests
 const entities = {
-  'town': [
+  'art_district': [
     {
-      id: 'old_man',
+      id: 'gallery_owner',
       x: 8,
       y: 8,
       dialogue: {
         'start': {
-          text: `Hello, traveler! My prized chicken is missing. Could you find it?`,
+          text: `Welcome to my gallery! I'm always looking for fresh talent. Would you be interested in creating a portrait commission?`,
           options: [
             {
-              text: `Of course!`,
-              nextState: 'quest_accepted',
+              text: `I'd love to try!`,
+              nextState: 'commission_accepted',
               actions: [
                 {
                   "id": "changeQuestState",
                   "params": {
-                    "questId": "chickenQuest",
+                    "questId": "firstCommission",
                     "newState": "accepted"
                   }
                 }
               ]
             },
             {
-              text: `I'm too busy.`,
-              nextState: 'quest_rejected',
+              text: `I'm not ready yet.`,
+              nextState: 'not_ready',
             }
           ]
         },
-        'quest_accepted': {
-          text: `Thank you! I believe it's in the forest. It's dangerous there.`,
+        'commission_accepted': {
+          text: `Excellent! I need a portrait drawing. You'll need good drawing skills and the right materials. The client will pay $50 for quality work.`,
           options: [
             {
-              text: `I'll be back.`,
+              text: `I'll get started right away.`,
               nextState: 'end',
             }
           ]
         },
-        'quest_in_progress': {
-          text: `Still no sign of my chicken?`,
+        'commission_in_progress': {
+          text: `How's that portrait coming along? Remember, quality matters for building your reputation.`,
           options: [
             {
-              text: `I'm still looking.`,
+              text: `Still working on it.`,
               nextState: 'end',
             }
           ]
         },
-        'quest_rejected': {
-          text: `A shame. If you change your mind, I'll be here.`,
+        'not_ready': {
+          text: `That's fine. Practice your skills and come back when you're more confident. There's an art supply store nearby.`,
           options: [
             {
-              text: `Goodbye.`,
+              text: `Thanks for the advice.`,
               nextState: 'end',
             }
           ]
         },
-        'quest_hand_over': {
-          text: `You have my chicken! Amazing! May I have him back?`,
+        'commission_complete': {
+          text: `This portrait is fantastic! You have real talent. Here's your payment, and I'd like to discuss a gallery show opportunity.`,
           options: [
             {
-              text: `Here you go.`,
-              nextState: 'quest_rewarded',
+              text: `Thank you! I'm interested in the gallery show.`,
+              nextState: 'gallery_opportunity',
               actions: [
                 {
-                  "id": "removeItemFromBackpack",
+                  "id": "addMoney",
                   "params": {
-                    "item": "chicken"
+                    "amount": 50
                   }
                 },
                 {
                   "id": "gainXp",
                   "params": {
-                    "amounts": [
-                      50,
-                      100
-                    ],
-                    "skills": [
-                      "vitality",
-                      "reputation"
-                    ]
+                    "amounts": [75, 25],
+                    "skills": ["drawing", "influence"]
                   }
                 },
                 {
                   "id": "changeQuestState",
                   "params": {
-                    "questId": "chickenQuest",
+                    "questId": "firstCommission",
                     "newState": "rewarded"
                   }
                 }
@@ -333,342 +348,270 @@ const entities = {
             }
           ]
         },
-        'quest_rewarded': {
-          text: `It's good to have him back. Thank you again!`,
+        'gallery_opportunity': {
+          text: `I host monthly shows for emerging artists. You'll need 3 high-quality pieces to participate. The exposure could launch your career!`,
           options: [
             {
-              text: `Anytime.`,
+              text: `I'll start preparing my portfolio.`,
               nextState: 'end',
+              actions: [
+                {
+                  "id": "changeQuestState",
+                  "params": {
+                    "questId": "galleryShow",
+                    "newState": "accepted"
+                  }
+                }
+              ]
             }
           ]
         },
         'end': {
-          text: `Farewell.`,
-          options: [
-          ]
+          text: `Best of luck with your artistic journey!`,
+          options: []
         }
       }
     },
     {
-      id: 'merchant',
+      id: 'supply_store_owner',
       x: 15,
       y: 10,
       dialogue: {
         'start': {
-          text: `Welcome! I've heard rumors of a magical crystal in the mountains. Interested?`,
+          text: `Welcome to ArtMart! We have everything an artist needs. What can I get you today?`,
           options: [
             {
-              text: `Tell me more.`,
-              nextState: 'crystal_info',
+              text: `I'd like to buy some supplies.`,
+              nextState: 'shop_menu',
             },
             {
-              text: `Not interested.`,
+              text: `Just browsing, thanks.`,
               nextState: 'end',
             }
           ]
         },
-        'crystal_info': {
-          text: `The Crystal of Power lies deep in the mountain caves. Bring it to me and I'll reward you handsomely!`,
+        'shop_menu': {
+          text: `Here's what we have in stock:\n• Canvas - $5\n• Paper - $1\n• Pencils - $2\n• Paint Brushes - $8\n• Watercolor Set - $15\n• Oil Paint Set - $25\n\nWhat would you like?`,
           options: [
             {
-              text: `I'll find it.`,
-              nextState: 'quest_accepted',
-              actions: [
-                {
-                  "id": "changeQuestState",
-                  "params": {
-                    "questId": "crystalQuest",
-                    "newState": "accepted"
-                  }
-                }
-              ]
+              text: `Canvas ($5)`,
+              nextState: 'buy_canvas',
             },
             {
-              text: `Too dangerous.`,
+              text: `Paper ($1)`,
+              nextState: 'buy_paper',
+            },
+            {
+              text: `Pencils ($2)`,
+              nextState: 'buy_pencil',
+            },
+            {
+              text: `Maybe later.`,
               nextState: 'end',
             }
           ]
         },
-        'quest_accepted': {
-          text: `Excellent! Be careful in those caves.`,
+        'buy_canvas': {
+          text: `Great choice! Canvas is essential for serious painting work.`,
           options: [
             {
-              text: `I will.`,
-              nextState: 'end',
-            }
-          ]
-        },
-        'quest_in_progress': {
-          text: `Any luck finding the crystal?`,
-          options: [
-            {
-              text: `Still searching.`,
-              nextState: 'end',
-            }
-          ]
-        },
-        'quest_hand_over': {
-          text: `The Crystal of Power! Magnificent! Here's your reward.`,
-          options: [
-            {
-              text: `Thank you.`,
-              nextState: 'quest_rewarded',
-              actions: [
-                {
-                  "id": "removeItemFromBackpack",
-                  "params": {
-                    "item": "crystal"
-                  }
-                },
-                {
-                  "id": "gainXp",
-                  "params": {
-                    "amounts": [
-                      100,
-                      50
-                    ],
-                    "skills": [
-                      "intelligence",
-                      "creativity"
-                    ]
-                  }
-                },
-                {
-                  "id": "changeQuestState",
-                  "params": {
-                    "questId": "crystalQuest",
-                    "newState": "rewarded"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        'quest_rewarded': {
-          text: `Pleasure doing business with you!`,
-          options: [
-            {
-              text: `Likewise.`,
-              nextState: 'end',
-            }
-          ]
-        },
-        'end': {
-          text: `Safe travels!`,
-          options: [
-          ]
-        }
-      }
-    }
-  ],
-  'forest': [
-    {
-      id: 'chicken',
-      x: 18,
-      y: 15,
-      dialogue: {
-        'start': {
-          text: `Bawk bawk! The chicken looks lost.`,
-          options: [
-            {
-              text: `Put the chicken in your backpack.`,
+              text: `Thanks!`,
               nextState: 'end',
               actions: [
                 {
-                  "id": "changeQuestState",
+                  "id": "spendMoney",
                   "params": {
-                    "questId": "chickenQuest",
-                    "newState": "completed"
+                    "amount": 5
                   }
                 },
                 {
                   "id": "addItemToBackpack",
                   "params": {
-                    "item": "chicken"
-                  }
-                },
-                {
-                  "id": "removeEntity",
-                  "params": {
-                    "mapId": "forest",
-                    "entityId": "chicken"
+                    "item": "canvas"
                   }
                 }
               ]
-            },
+            }
+          ]
+        },
+        'buy_paper': {
+          text: `Perfect for sketches and practice work!`,
+          options: [
             {
-              text: `Leave the chicken.`,
+              text: `Thanks!`,
               nextState: 'end',
+              actions: [
+                {
+                  "id": "spendMoney",
+                  "params": {
+                    "amount": 1
+                  }
+                },
+                {
+                  "id": "addItemToBackpack",
+                  "params": {
+                    "item": "paper"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        'buy_pencil': {
+          text: `Every artist needs good pencils. These are professional grade!`,
+          options: [
+            {
+              text: `Thanks!`,
+              nextState: 'end',
+              actions: [
+                {
+                  "id": "spendMoney",
+                  "params": {
+                    "amount": 2
+                  }
+                },
+                {
+                  "id": "addItemToBackpack",
+                  "params": {
+                    "item": "pencil"
+                  }
+                }
+              ]
             }
           ]
         },
         'end': {
-          text: `Bawk.`,
-          options: [
-          ]
+          text: `Keep creating amazing art!`,
+          options: []
         }
       }
     }
   ],
-  'mountain_cave': [
+  'coffee_shop': [
     {
-      id: 'crystal',
+      id: 'barista',
       x: 12,
       y: 8,
       dialogue: {
         'start': {
-          text: `A brilliant crystal pulses with magical energy.`,
+          text: `Welcome to The Creative Grind! Nothing fuels artistic inspiration like good coffee. What can I get you?`,
           options: [
             {
-              text: `Take the crystal.`,
-              nextState: 'end',
-              actions: [
-                {
-                  "id": "changeQuestState",
-                  "params": {
-                    "questId": "crystalQuest",
-                    "newState": "completed"
-                  }
-                },
-                {
-                  "id": "addItemToBackpack",
-                  "params": {
-                    "item": "crystal"
-                  }
-                },
-                {
-                  "id": "removeEntity",
-                  "params": {
-                    "mapId": "mountain_cave",
-                    "entityId": "crystal"
-                  }
-                }
-              ]
+              text: `Coffee please ($3)`,
+              nextState: 'buy_coffee',
             },
             {
-              text: `Leave it alone.`,
+              text: `Espresso ($4)`,
+              nextState: 'buy_espresso',
+            },
+            {
+              text: `Just looking around.`,
               nextState: 'end',
             }
           ]
         },
-        'end': {
-          text: `The crystal hums softly.`,
+        'buy_coffee': {
+          text: `One coffee coming up! This should give you the energy boost you need for your next masterpiece.`,
           options: [
+            {
+              text: `Perfect, thanks!`,
+              nextState: 'end',
+              actions: [
+                {
+                  "id": "spendMoney",
+                  "params": {
+                    "amount": 3
+                  }
+                },
+                {
+                  "id": "restoreEnergy",
+                  "params": {
+                    "amount": 20
+                  }
+                }
+              ]
+            }
           ]
+        },
+        'buy_espresso': {
+          text: `Double shot espresso! This will definitely keep you going through those long painting sessions.`,
+          options: [
+            {
+              text: `Just what I needed!`,
+              nextState: 'end',
+              actions: [
+                {
+                  "id": "spendMoney",
+                  "params": {
+                    "amount": 4
+                  }
+                },
+                {
+                  "id": "restoreEnergy",
+                  "params": {
+                    "amount": 30
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        'end': {
+          text: `Enjoy, and may your creativity flow!`,
+          options: []
         }
       }
     }
   ],
-  'hidden_grotto': [
+  'art_studio': [
     {
-      id: 'mysterious_figure',
+      id: 'master_artist',
       x: 10,
       y: 10,
       dialogue: {
         'start': {
-          text: `A cloaked figure stands silently. They drop a dusty note as you approach.`,
+          text: `Ah, a young artist! I can see the passion in your eyes. Would you like to learn from someone who's been painting for 40 years?`,
           options: [
             {
-              text: `Pick up the note.`,
-              nextState: 'note_found',
+              text: `Yes, please teach me!`,
+              nextState: 'mentorship_accepted',
               actions: [
-                {
-                  "id": "addItemToBackpack",
-                  "params": {
-                    "item": "mysterious_note"
-                  }
-                },
                 {
                   "id": "changeQuestState",
                   "params": {
-                    "questId": "mysteriousNoteQuest",
+                    "questId": "mentorQuest",
                     "newState": "accepted"
                   }
                 }
               ]
             },
             {
-              text: `Leave them be.`,
+              text: `Maybe another time.`,
               nextState: 'end',
             }
           ]
         },
-        'note_found': {
-          text: `The note reads: 'Seek the Ancient Tablet in the forgotten shrine. Only then will the truth be revealed.'`,
+        'mentorship_accepted': {
+          text: `Excellent! First lesson: technique is important, but emotion is everything. Create something that moves people, not just something that looks pretty.`,
           options: [
             {
-              text: `What shrine?`,
-              nextState: 'shrine_question',
-            },
-            {
-              text: `This is cryptic.`,
-              nextState: 'end',
-            }
-          ]
-        },
-        'shrine_question': {
-          text: `The figure merely points vaguely towards the east, then vanishes into thin air.`,
-          options: [
-            {
-              text: `They vanished!`,
+              text: `I understand. Thank you for the wisdom.`,
               nextState: 'end',
               actions: [
                 {
-                  "id": "changeQuestState",
+                  "id": "gainXp",
                   "params": {
-                    "questId": "mysteriousNoteQuest",
-                    "newState": "in_progress"
-                  }
-                },
-                {
-                  "id": "removeEntity",
-                  "params": {
-                    "mapId": "hidden_grotto",
-                    "entityId": "mysterious_figure"
-                  }
-                },
-                {
-                  "id": "showGameSystemHint",
-                  "params": {
-                    "message": "A new path seems to have opened in the eastern forest... perhaps leading to a shrine?",
-                    "nextState": "end"
+                    "amounts": [50, 25, 25],
+                    "skills": ["creativity", "painting", "drawing"]
                   }
                 }
               ]
-            }
-          ]
-        },
-        'quest_rewarded': {
-          text: `You feel a strange energy in the air, as if the shrine's power has been awakened.`,
-          options: [
-            {
-              text: `My work here is done.`,
-              nextState: 'end',
-              actions: [
-                {
-                  "id": "removeEntity",
-                  "params": {
-                    "mapId": "hidden_grotto",
-                    "entityId": "mysterious_figure"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        'quest_in_progress': {
-          text: `The space where the figure once stood feels cold. You recall the note's words about the Ancient Tablet.`,
-          options: [
-            {
-              text: `I must find that shrine.`,
-              nextState: 'end',
             }
           ]
         },
         'end': {
-          text: `Silence returns to the grotto.`,
-          options: [
-          ]
+          text: `Remember, art is not what you see, but what you make others see.`,
+          options: []
         }
       }
     }

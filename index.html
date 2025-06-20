@@ -26,6 +26,11 @@
       <!-- Game Canvas -->
       <canvas id="gameCanvas" width="800" height="600"></canvas>
 
+      <!-- Money Display Overlay -->
+      <div class="money-overlay" id="moneyOverlay">
+        $<span id="moneyText">50</span>
+      </div>
+
       <!-- Dialogue Overlay (positioned over canvas) -->
       <div class="dialogue-overlay hidden" id="dialogueBox">
         <div class="dialogue-text" id="dialogueText"></div>
@@ -36,10 +41,10 @@
 
     <!-- Right Sidebar with UI Panels -->
     <div class="game-sidebar">
-      <!-- HP Panel -->
+      <!-- Well-being Panel -->
       <div class="sidebar-panel hp-panel">
         <div class="panel-header">
-          ❤️ Health
+          💚 Well-being
         </div>
         <div class="hp-bar">
           <div class="hp-fill" id="hpFill" style="width: 100%;"></div>
@@ -47,22 +52,31 @@
         </div>
       </div>
 
-      <!-- Backpack Panel -->
-      <div class="sidebar-panel backpack-panel">
+      <!-- Energy Panel -->
+      <div class="sidebar-panel hp-panel">
         <div class="panel-header">
-          🎒 Inventory
+          ⚡ Energy
         </div>
-        <div id="backpackList">
-          <div class="backpack-item">Canvas (x3)</div>
-          <div class="backpack-item">Paint Brush</div>
-          <div class="backpack-item">Art Supplies</div>
+        <div class="hp-bar">
+          <div class="hp-fill" id="energyFill" style="width: 100%; background: linear-gradient(90deg, #4299e1, #3182ce);"></div>
+          <div class="hp-text" id="energyText">100/100</div>
         </div>
       </div>
 
-      <!-- Stats Panel -->
+      <!-- Art Supplies Panel -->
+      <div class="sidebar-panel backpack-panel">
+        <div class="panel-header">
+          🎒 Art Supplies
+        </div>
+        <div id="backpackList">
+          <!-- Backpack items will be dynamically generated here -->
+        </div>
+      </div>
+
+      <!-- Skills Panel -->
       <div class="sidebar-panel stats-panel" id="statsPanel">
         <div class="panel-header">
-          📊 Skills
+          📊 Artistic Skills
         </div>
         <button class="stats-toggle" id="toggleStatsPanel">Toggle Details</button>
         <div class="collapsible-content" id="statsContent">
@@ -70,6 +84,36 @@
             <!-- Skill rows will be dynamically generated here -->
           </div>
         </div>
+      </div>
+
+      <!-- Crafting Panel -->
+      <div class="sidebar-panel stats-panel">
+        <div class="panel-header">
+          🎨 Create Art
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;">
+          <button id="craft_pencil_sketch" class="stats-toggle" onclick="startCrafting('pencil_sketch')" 
+                  style="padding: 6px 4px; font-size: 10px;">
+            ✏️ Sketch
+          </button>
+          <button id="craft_watercolor_painting" class="stats-toggle" onclick="startCrafting('watercolor_painting')" 
+                  style="padding: 6px 4px; font-size: 10px;">
+            🎨 Watercolor
+          </button>
+          <button id="craft_oil_painting" class="stats-toggle" onclick="startCrafting('oil_painting')" 
+                  style="padding: 6px 4px; font-size: 10px;">
+            🖼️ Oil Paint
+          </button>
+          <button id="craft_clay_sculpture" class="stats-toggle" onclick="startCrafting('clay_sculpture')" 
+                  style="padding: 6px 4px; font-size: 10px;">
+            🗿 Sculpture
+          </button>
+        </div>
+        <div id="craftingStatus" style="font-size: 10px; color: #a0aec0; min-height: 20px;"></div>
+        <button id="cancelCrafting" onclick="cancelCrafting()" 
+                style="display: none; padding: 4px 8px; font-size: 10px; background: #f56565; margin-top: 4px;">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -81,13 +125,8 @@
   <script src="js/pathfinding.js"></script>
   <script src="js/drawing.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/crafting.js"></script>
   <script src="js/main.js"></script>
-
-  <script>
-    // Remove the demo functionality - your existing JavaScript will handle this
-    // The toggleStatsPanel button and statsPanel elements now have the correct IDs
-    // for your existing event listeners to work properly
-  </script>
 </body>
 
 </html>
