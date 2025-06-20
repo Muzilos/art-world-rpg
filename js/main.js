@@ -12,45 +12,51 @@ function canInteract(x1, y1, x2, y2) {
   // the absolute difference in y is 0 or 1, OR
   // they are already on the exact same tile (i.e., standing on self).
   return (Math.abs(x1 - x2) <= 1 && Math.abs(y1 - y2) <= 1) || (x1 === x2 && y1 === y2);
-
 }
 
 /**
- * Determines the appropriate dialogue state for a entity based on quest progress.
+ * Determines the appropriate dialogue state for an entity based on its dialogueLogic rules and quest progress.
+ * This function now exclusively uses the `dialogueLogic` array on the entity for dynamic dialogue.
  * @param {object} entity - The entity object.
  * @returns {string} - The key for the current dialogue state.
  */
 function getDialogueState(entity) {
-  // Old Man quest for chicken
-  if (entity.id === 'old_man') {
-    const questStatus = gameState.quests.chickenQuest;
-    const hasChicken = gameState.player.backpack.includes('chicken');
-    if (questStatus === 'rewarded') return 'quest_rewarded';
-    if (questStatus === 'completed' && hasChicken) return 'quest_hand_over';
-    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasChicken)) return 'quest_in_progress';
+  // If the entity does not have a defined dialogueLogic, default to 'start'.
+  // This allows older entities or simple entities without complex logic to still function.
+  if (!entity.dialogueLogic) {
+    return 'start';
   }
 
-  // Merchant quest for crystal
-  if (entity.id === 'merchant') {
-    const questStatus = gameState.quests.crystalQuest;
-    const hasCrystal = gameState.player.backpack.includes('crystal');
-    if (questStatus === 'rewarded') return 'quest_rewarded';
-    if (questStatus === 'completed' && hasCrystal) return 'quest_hand_over';
-    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasCrystal)) return 'quest_in_progress';
+  // Iterate through the dialogueLogic rules in order. The first rule whose conditions are met will determine the state.
+  for (const rule of entity.dialogueLogic) {
+    let allConditionsMet = true; // Assume conditions are met until proven otherwise
+    for (const condition of rule.conditions) {
+      if (condition.type === 'questStatus') {
+        // Check if the quest status matches the required status
+        if (gameState.quests[condition.questId] !== condition.status) {
+          allConditionsMet = false;
+          break; // If this condition fails, no need to check further conditions for this rule
+        }
+      } else if (condition.type === 'hasItem') {
+        // Check if the player has the required item (and quantity)
+        // Default required quantity to 1 if not specified
+        const requiredQuantity = condition.quantity || 1;
+        if (!gameState.player.backpack[condition.itemId] || gameState.player.backpack[condition.itemId] < requiredQuantity) {
+          allConditionsMet = false;
+          break; // If this condition fails, no need to check further conditions for this rule
+        }
+      }
+      // Add more condition types here as your game evolves (e.g., skillLevel, moneyAmount, etc.)
+    }
+
+    // If all conditions for the current rule are met, return its target dialogue state
+    if (allConditionsMet) {
+      return rule.targetState;
+    }
   }
 
-  // New Quest: Mysterious Note
-  if (entity.id === 'mysterious_figure') {
-    console.log('Checking dialogue state for mysterious figure');
-    // Check the quest status and whether the player has the note
-    const questStatus = gameState.quests.mysteriousNoteQuest;
-    const hasNote = gameState.player.backpack.includes('mysterious_note');
-    if (questStatus === 'rewarded') return 'quest_rewarded';
-    if (questStatus === 'completed' && hasNote) return 'quest_hand_over';
-    if (questStatus === 'accepted' || (questStatus === 'completed' && !hasNote)) return 'quest_in_progress';
-  }
-
-  // Default state if no specific quest dialogue applies
+  // Fallback: If no rules in dialogueLogic matched (which should ideally not happen if a default 'start' rule is included),
+  // return 'start'. This acts as a final safety net.
   return 'start';
 }
 

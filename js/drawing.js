@@ -130,7 +130,7 @@ function updateMoneyDisplay() {
   if (!previousMoney || previousMoney !== currentMoney) {
     const moneyText = document.getElementById('moneyText');
     if (moneyText) {
-      moneyText.textContent = `$${currentMoney}`;
+      moneyText.textContent = `${currentMoney}`;
     }
     previousMoney = currentMoney;
   }

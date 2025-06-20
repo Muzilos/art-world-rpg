@@ -1,8 +1,56 @@
 let craftingTimer = null;
 let isCrafting = false;
 
-function canCraft(recipeId) {
-  const recipe = gameState.crafting.availableRecipes.find(r => r.id === recipeId);
+const crafting = {
+  recipes: [
+    {
+      id: 'pencil_sketch',
+      name: 'Pencil Sketch',
+      materials: { 'pencil': 0.1, 'paper': 1 },
+      time: 30,
+      skill: 'drawing',
+      minLevel: 1,
+      value: 10,
+      energy: 15,
+      unlocked: true,
+    },
+    {
+      id: 'watercolor_painting',
+      name: 'Watercolor Painting',
+      materials: { 'watercolor': 0.2, 'canvas': 1, 'brush': 0.1 },
+      time: 120,
+      skill: 'painting',
+      minLevel: 2,
+      value: 45,
+      energy: 35,
+      unlocked: true,
+    },
+    {
+      id: 'oil_painting',
+      name: 'Oil Painting',
+      materials: { 'oil_paint': 0.2, 'canvas': 1, 'brush': 0.2, 'palette': 1 },
+      time: 300,
+      skill: 'painting',
+      minLevel: 3,
+      value: 150,
+      energy: 50,
+      unlocked: true,
+    },
+    {
+      id: 'clay_sculpture',
+      name: 'Clay Sculpture',
+      materials: { 'clay': 1, 'sculpting_tools': 1 },
+      time: 180,
+      skill: 'sculpting',
+      minLevel: 1,
+      value: 80,
+      energy: 40,
+      unlocked: true,
+    }
+  ]
+}
+
+function canCraft(recipe) {
   if (!recipe) return { canCraft: false, reason: "Recipe not found" };
 
   // Check skill level
@@ -42,13 +90,13 @@ function canCraft(recipeId) {
 }
 
 function updateCraftingUI() {
-  const recipes = gameState.crafting.availableRecipes;
+  const recipes = crafting.recipes.filter(item => item.unlocked === true);
 
   recipes.forEach(recipe => {
     const button = document.getElementById(`craft_${recipe.id}`);
     if (!button) return;
 
-    const craftCheck = canCraft(recipe.id);
+    const craftCheck = canCraft(recipe);
 
     if (isCrafting) {
       button.disabled = true;
@@ -79,10 +127,10 @@ function startCrafting(recipeId) {
     return;
   }
 
-  const recipe = gameState.crafting.availableRecipes.find(r => r.id === recipeId);
+  const recipe = crafting.recipes.filter(r => r.unlocked === true).find(r => r.id === recipeId);
   if (!recipe) return;
 
-  const craftCheck = canCraft(recipeId);
+  const craftCheck = canCraft(recipe);
   if (!craftCheck.canCraft) {
     updateCraftingStatus(craftCheck.reason);
     return;
