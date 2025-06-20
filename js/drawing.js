@@ -42,24 +42,8 @@ function draw() {
   }
 
   // Draw entities (gallery owner, supply store owner, barista, master artist)
-  (entities[gameState.currentMap] || []).forEach(char => {
-    let color;
-    switch (char.id) {
-      case 'gallery_owner':
-        color = '#8b5cf6'; // Purple for gallery owner
-        break;
-      case 'supply_store_owner':
-        color = '#f59e0b'; // Amber for supply store owner
-        break;
-      case 'barista':
-        color = '#8b4513'; // Brown for barista
-        break;
-      case 'master_artist':
-        color = '#dc2626'; // Red for master artist
-        break;
-      default:
-        color = '#6b7280'; // Default gray
-    }
+  (map.entities || []).forEach(char => {
+    let color = entities[char.id].sprite || '#6b7280'; // Default gray
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(
@@ -73,7 +57,7 @@ function draw() {
 
 
   // Draw player
-  ctx.fillStyle = 'red'; // Player color
+  ctx.fillStyle = gameState.player.sprite || '#ff0000'; // Player color
   ctx.beginPath();
   ctx.arc(
     gameState.player.x * TILE_SIZE + TILE_SIZE / 2, // Center X

@@ -19,6 +19,7 @@ const gameState = {
   },
   player: {
     x: 5, y: 5,
+    sprite: "red",
     path: [],
     speed: 100,
     moveTimer: 0,

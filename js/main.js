@@ -189,7 +189,9 @@ function initializeEventListeners() {
     gameState.clickMarker.type = 'normal'; // Default type
 
     // Check for entity interaction
-    const entity = (entities[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
+    const entity_id = (maps[gameState.currentMap].entities || []).find(c => c.x === tileX && c.y === tileY)?.id;
+    console.log(entity_id)
+    const entity = entity_id !== undefined ? entities[entity_id] : undefined;
     if (entity) {
       gameState.clickMarker.type = 'interactive'; // Mark as interactive
       // If the entity is adjacent, show dialogue. Otherwise, move to an adjacent tile.

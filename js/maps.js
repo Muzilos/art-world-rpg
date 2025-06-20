@@ -3,7 +3,8 @@ const TILE_SIZE = 32; // Size of each tile in pixels
 // Define all game maps for the art world
 const maps = {
   'art_district': {
-    width: 25, height: 19,
+    width: 25,
+    height: 19,
     tiles: [
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -25,16 +26,43 @@ const maps = {
       1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     ],
-    transitions: [
-      { x: 12, y: 17, targetMap: 'coffee_shop', targetX: 12, targetY: 1 }, // Art District to Coffee Shop
-      { x: 12, y: 4, targetMap: 'art_studio', targetX: 12, targetY: 1 }, // Art District to Art Studio
-      { x: 12, y: 10, targetMap: 'forest', targetX: 12, targetY: 17 }, // Art District to Forest
-    ]
+    transitions: [{
+      x: 12,
+      y: 17,
+      targetMap: 'coffee_shop',
+      targetX: 12,
+      targetY: 1
+    }, {
+      x: 12,
+      y: 4,
+      targetMap: 'art_studio',
+      targetX: 12,
+      targetY: 1
+    }, {
+      x: 12,
+      y: 10,
+      targetMap: 'forest',
+      targetX: 12,
+      targetY: 17
+    },],
+    entities: [{
+      id: 'gallery_owner',
+      x: 8,
+      y: 8
+    }, {
+      id: 'supply_store_owner',
+      x: 15,
+      y: 10
+    }, {
+      id: 'traveler',
+      x: 3,
+      y: 15
+    },],
   },
   'coffee_shop': {
-    width: 25, height: 19,
+    width: 25,
+    height: 19,
     tiles: [
-      // Coffee shop interior with tables (2), counter (1), and floor (0)
       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
       2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
       2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
@@ -55,14 +83,23 @@ const maps = {
       2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
       2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
     ],
-    transitions: [
-      { x: 12, y: 0, targetMap: 'art_district', targetX: 12, targetY: 17 } // Coffee Shop to Art District
-    ]
+    transitions: [{
+      x: 12,
+      y: 0,
+      targetMap: 'art_district',
+      targetX: 12,
+      targetY: 17
+    }],
+    entities: [{
+      id: 'barista',
+      x: 12,
+      y: 8
+    },],
   },
   'art_studio': {
-    width: 25, height: 19,
+    width: 25,
+    height: 19,
     tiles: [
-      // Art studio with easels (1), storage (2), and workspace (0)
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
       1, 0, 0, 2, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 1,
@@ -83,14 +120,22 @@ const maps = {
       1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     ],
-    transitions: [
-      { x: 12, y: 1, targetMap: 'art_district', targetX: 12, targetY: 4 } // Art Studio to Art District
-    ]
+    transitions: [{
+      x: 12,
+      y: 1,
+      targetMap: 'art_district',
+      targetX: 12,
+      targetY: 4
+    }],
+    entities: [{
+      id: 'master_artist',
+      x: 10,
+      y: 10
+    },],
   },
   'forest': {
     width: 25,
     height: 19,
-    // Initial map layout for forest (0=empty, 1=tree/dense forest, 5=forest path)
     tiles: [
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -112,10 +157,22 @@ const maps = {
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
     ],
-    transitions: [
-      // This transition will be updated by migration2.js to go to the art_district
-      { x: 12, y: 17, targetMap: 'art_district', targetX: 12, targetY: 10 }
-    ]
+    transitions: [{
+      x: 12,
+      y: 17,
+      targetMap: 'art_district',
+      targetX: 12,
+      targetY: 10
+    }],
+    entities: [{
+      id: 'ancient_tree',
+      x: 20,
+      y: 12
+    }, {
+      id: 'hermit',
+      x: 12,
+      y: 9
+    }]
   }
 };
 

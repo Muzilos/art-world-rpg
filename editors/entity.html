@@ -627,7 +627,7 @@
       }
 
       // Draw entities
-      const charsOnMap = entities[currentMapId] || [];
+      const charsOnMap = maps[currentMapId].entities || [];
       charsOnMap.forEach(char => {
         const isSelected = selectedEntity && selectedEntity.mapId === currentMapId && selectedEntity.charId === char.id;
         ctx.fillStyle = isSelected ? 'rgba(255, 255, 0, 0.7)' : 'rgba(0, 0, 0, 0.7)'; // Yellow for selected, black for others
