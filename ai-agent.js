@@ -1,3 +1,35 @@
+// === UTILITY FUNCTIONS FOR AI AGENT (static methods) ===
+
+// Helper function to escape backticks within strings to prevent syntax errors when nesting template literals
+function escapeBackticksForCode(str) {
+  if (typeof str === 'string') {
+    return str.replace(/`/g, '\\`');
+  }
+  return str;
+}
+
+// Recursive function to process dialogue nodes and escape backticks in all text fields
+function processDialogueNodeForSerialization(node) {
+  if (node && typeof node === 'object') {
+    // Process text field in the current node
+    if (node.text) {
+      node.text = escapeBackticksForCode(node.text);
+    }
+    // Process options, which also have text fields
+    if (node.options && Array.isArray(node.options)) {
+      node.options.forEach(option => {
+        if (option.text) {
+          option.text = escapeBackticksForCode(option.text);
+        }
+        // Recursively process nextState if it refers to another dialogue node within the same entity
+        // (This is a simplified check, adjust if your dialogue structure is more complex and deeply nested)
+        // For the current game structure, options directly link to nextState, not nested dialogue objects here.
+      });
+    }
+    // No need to recurse into 'actions' as they typically contain function calls or data, not free text for display.
+  }
+}
+
 // AI Agent for Art World RPG - Fixed Version
 class AIGameAgent {
   constructor() {
@@ -130,7 +162,6 @@ class AIGameAgent {
 
     return interactables;
   }
-
   // === DECISION MAKING ===
   async makeDecision() {
     try {
@@ -631,10 +662,42 @@ entities['art_district'].push({
           }]
         },
         end: { text: "Come back when you have more art!", options: [] }
+      },
+      // You can add more templates here for student, rival_artist etc.
+      // Make sure all 'text' fields in all templates are properly escaped.
+      student: {
+        start: {
+          text: "I'm a new art student, always looking for inspiration and advice. Do you have any tips for a beginner?",
+          options: [
+            { text: "Practice daily with your sketchbook!", nextState: "advice1" },
+            { text: "Try experimenting with different mediums.", nextState: "advice2" }
+          ]
+        },
+        advice1: {
+          text: "That's great advice! I'll make sure to carry my sketchbook everywhere.",
+          options: [{ text: "Good luck!", nextState: "end" }]
+        },
+        advice2: {
+          text: "Interesting! I've been sticking to pencils, but maybe I should try paints.",
+          options: [{ text: "Give it a go!", nextState: "end" }]
+        },
+        end: { text: "Thanks for the chat!", options: [] }
       }
     };
 
-    return templates[npc.id] || templates.art_critic;
+    let dialogueData = templates[npc.id] || templates.art_critic;
+
+    // Deep copy to avoid modifying the original template objects directly
+    dialogueData = JSON.parse(JSON.stringify(dialogueData));
+
+    // Iterate through all dialogue states and process their text content
+    for (const stateKey in dialogueData) {
+      if (dialogueData.hasOwnProperty(stateKey)) {
+        processDialogueNodeForSerialization(dialogueData[stateKey]);
+      }
+    }
+
+    return dialogueData; // Return the processed object
   }
 
   generateNewQuest() {
@@ -750,39 +813,36 @@ if (gameState && gameState.quests) {
   async applyModification(mod) {
     console.log(`[AI Agent] Applying modification: ${mod.description}`);
 
-    // In a real implementation, this would modify the actual files
-    // For this demo, we'll just log the changes
-    console.log(`File: ${mod.file}`);
-    console.log(`Code to add:\n${mod.code}`);
+    let dataToSave;
+    let targetFileName; // e.g., 'entities.json', 'maps.json', 'state.json'
 
-    // Store modification in localStorage for persistence
-    const mods = JSON.parse(localStorage.getItem('ai_agent_mods') || '[]');
-    mods.push(mod);
-    // don't update localStorage, update the file directly
-    // to avoid cluttering the localStorage with too many modifications
-    const filePath = mod.file;
-    const fileContent = mod.code;
-    // Update the file directly (this is a placeholder, implement file update logic)
-    console.log(`Updating file: ${filePath}`);
-    console.log(`New content:\n${fileContent}`);
-    console.log(`[AI Agent] Applying modification: ${mod.description}`);
-    try {
-      const response = await fetch('http://localhost:3000/update-file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filePath: mod.file, content: mod.code }),
-      });
-      console.log(response);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      console.log(`[AI Agent] File ${mod.file} updated successfully on server.`);
-    } catch (error) {
-      console.error(`[AI Agent] Error updating file ${mod.file}:`, error);
+    if (mod.type === 'entity_update' || mod.type === 'feature') {
+      dataToSave = window.entities; // Send the whole entities object
+      targetFileName = 'data/entities.json';
+    } else if (mod.type === 'map' || mod.type === 'balance') {
+      dataToSave = window.maps; // Send the whole maps object
+      targetFileName = 'data/maps.json';
+    } else if (mod.type === 'quest' || mod.type === 'helper') {
+      dataToSave = window.gameState; // Send the whole gameState object
+      targetFileName = 'data/state.json';
     }
+    // Use JSON.stringify for robust serialization
+    const contentString = JSON.stringify(dataToSave, null, 2);
+
+    try {
+      const response = await fetch('http://localhost:3000/update-data-file', { // New endpoint
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: targetFileName, content: contentString }),
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      console.log(`[AI Agent] Data file ${targetFileName} updated successfully on server.`);
+    } catch (error) {
+      console.error(`[AI Agent] Error updating data file ${targetFileName}:`, error);
+    }
+    // Reload game after modification
+    setTimeout(() => window.location.reload(), 1000);
   }
 
   // === UTILITY FUNCTIONS ===

@@ -1,4 +1,9 @@
 // === UTILITY FUNCTIONS ===
+
+let gameState;
+let maps;
+let entities;
+
 /**
  * Checks if two sets of coordinates are adjacent (including diagonals).
  * @param {number} x1 - X-coordinate of the first point.
@@ -62,6 +67,12 @@ let lastTime = 0; // Timestamp of the previous frame
  * @param {DOMHighResTimeStamp} timestamp - The current time provided by requestAnimationFrame.
  */
 function gameLoop(timestamp) {
+  // Ensure all necessary game data is loaded before starting the loop's core logic
+  if (!maps || !gameState || !entities) {
+    requestAnimationFrame(gameLoop); // Keep trying until data is loaded
+    return;
+  }
+
   const deltaTime = timestamp - lastTime; // Calculate time elapsed since last frame
   lastTime = timestamp; // Update lastTime for the next frame
   updateUIOverlay(); // Update DOM-based UI elements
@@ -76,6 +87,7 @@ function gameLoop(timestamp) {
  * @param {number} deltaTime - The time elapsed since the last update in milliseconds.
  */
 function update(deltaTime) {
+  if (!gameState || !maps) return; // Defensive check
   // Decrease the player's movement timer
   gameState.player.moveTimer -= deltaTime;
 
@@ -98,7 +110,12 @@ function update(deltaTime) {
  * Checks if the player has moved onto a transition tile and updates the map accordingly.
  */
 function checkTransition() {
+  if (!maps || !gameState) return; // Defensive check
   const map = maps[gameState.currentMap]; // Get the current map data
+  if (!map) {
+    console.error(`Map data not found for ${gameState.currentMap}`);
+    return;
+  }
   // Find if the player's current position matches any transition point on the map
   const transition = map.transitions.find(t => t.x === gameState.player.x && t.y === gameState.player.y);
 
@@ -111,6 +128,39 @@ function checkTransition() {
     gameState.clickMarker.x = -1; // Reset click marker
     gameState.clickMarker.y = -1;
   }
+}
+
+// === ASYNCHRONOUS DATA LOADING FUNCTION ===
+async function loadGameData() {
+    try {
+        // Fetch entities data
+        const entitiesResponse = await fetch('http://localhost:3000/data/entities'); // Assuming new endpoint for entities
+        if (!entitiesResponse.ok) throw new Error('Failed to fetch entities data');
+        entities = await entitiesResponse.json(); // Assign to global variable
+
+        // Fetch maps data
+        const mapsResponse = await fetch('http://localhost:3000/data/maps'); // Assuming new endpoint for maps
+        if (!mapsResponse.ok) throw new Error('Failed to fetch maps data');
+        maps = await mapsResponse.json(); // Assign to global variable
+
+        // Fetch game state data (or define default if not from file)
+        // For 'state.js', it holds gameState. You could fetch a default state from server
+        // or keep initial state in main.js if it's dynamic/session-based.
+        // For simplicity, let's assume you define the initial gameState here or fetch it.
+        // IMPORTANT: If you convert state.js to JSON, ensure it only contains the object.
+        const stateResponse = await fetch('http://localhost:3000/data/state'); // New endpoint for state
+        if (!stateResponse.ok) throw new Error('Failed to fetch game state data');
+        gameState = await stateResponse.json(); // Assign to global variable
+
+        console.log("All game data loaded successfully!");
+        // Now that data is loaded, initialize event listeners and start the game loop
+        initializeEventListeners();
+        requestAnimationFrame(gameLoop);
+
+    } catch (error) {
+        console.error('Error loading game data:', error);
+        // Display an error message to the user or retry
+    }
 }
 
 // === EVENT LISTENERS ===
@@ -332,6 +382,8 @@ function getAdjacentWalkableTiles(targetX, targetY, map) {
 
 // Start the game loop when the window loads
 window.onload = function () {
+  loadGameData(); // Load game data asynchronously
+  // Initialize game state and maps if not loaded from file
   initializeEventListeners();
   requestAnimationFrame(gameLoop);
 }
