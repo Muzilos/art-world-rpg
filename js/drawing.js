@@ -58,7 +58,7 @@ function draw() {
         color = '#dc2626'; // Red for master artist
         break;
       default:
-        color = '#6b7280'; // Default gray
+        color = '#6b7280'; // Default purple-gray for other characters
     }
     ctx.fillStyle = color;
     ctx.beginPath();

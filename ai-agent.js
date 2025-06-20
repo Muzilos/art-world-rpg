@@ -27,9 +27,9 @@ class AIGameAgent {
     };
 
     this.config = {
-      actionDelay: 1000, // Increased delay for stability
-      boredomThreshold: 80,
-      frustrationThreshold: 80,
+      actionDelay: 200, // Increased delay for stability
+      boredomThreshold: 85,
+      frustrationThreshold: 85,
       memoryWindowSize: 20
     };
 
@@ -199,6 +199,18 @@ class AIGameAgent {
         const locationKey = `${gameState.currentMap}:${action.target.x},${action.target.y}`;
         if (!this.memory.visitedLocations.has(locationKey)) {
           score += 15;
+        } else if (action.type === 'craft') {
+          // High priority for crafting if it helps complete quests or increase skills
+          const recipe = gameState.crafting.availableRecipes.find(r => r.id === action.target);
+          if (recipe) {
+            // Boost if crafting leads to quest completion
+            // This would require more advanced quest parsing, but for now, prioritize if skill is needed
+            if (this.goals.increaseSkills.progress < 100 && recipe.skill) {
+              score += this.goals.increaseSkills.priority * 40; // High score for skill progression
+            }
+            // Prioritize if boredom is high (gives player something to do)
+            score += this.emotionalState.boredom * 0.2;
+          }
         }
       }
 
@@ -268,6 +280,23 @@ class AIGameAgent {
           });
         }
       });
+      try {
+        // Add crafting actions
+        if (typeof gameState !== 'undefined' && gameState.crafting && gameState.crafting.availableRecipes) {
+          gameState.crafting.availableRecipes.forEach(recipe => {
+            const craftCheck = canCraft(recipe.id); // Call canCraft from crafting.js
+            if (craftCheck.canCraft) {
+              actions.push({
+                type: 'craft',
+                target: recipe.id,
+                description: `Craft ${recipe.name}`
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('[AI Agent] Crafting action generation error:', error);
+      }
 
       // Random exploration (reduced frequency)
       if (Math.random() < 0.1) {
@@ -294,29 +323,44 @@ class AIGameAgent {
     try {
       switch (action.type) {
         case 'move':
-          this.clickCanvas(action.target.x, action.target.y);
-          const locationKey = `${gameState.currentMap}:${action.target.x},${action.target.y}`;
-          this.memory.visitedLocations.add(locationKey);
+          // Only click if the player is not currently on a path
+          if (gameState.player.path.length === 0) { //
+            this.clickCanvas(action.target.x, action.target.y);
+            const locationKey = `${gameState.currentMap}:${action.target.x},${action.target.y}`; //
+            this.memory.visitedLocations.add(locationKey);
+          } else {
+            console.log('[AI Agent] Player is already in motion, deferring new move.');
+          }
           break;
 
         case 'interact_npc':
           this.clickCanvas(action.target.position.x, action.target.position.y);
-          const interactionKey = `${gameState.currentMap}:${action.target.id}`;
+          const interactionKey = `${gameState.currentMap}:${action.target.id}`; //
           this.memory.completedInteractions.add(interactionKey);
           this.memory.knownNPCs.set(action.target.id, {
-            location: gameState.currentMap,
+            location: gameState.currentMap, //
             position: action.target.position
           });
           break;
 
         case 'explore':
           // Click on transition
-          const transition = maps[gameState.currentMap].transitions.find(
+          const transition = maps[gameState.currentMap].transitions.find( //
             t => t.targetMap === action.targetMap
           );
           if (transition) {
             this.clickCanvas(transition.x, transition.y);
             this.memory.exploredMaps.add(action.targetMap);
+          }
+          break;
+
+        case 'craft':
+          // Call the crafting function from crafting.js
+          if (typeof startCrafting === 'function') {
+            startCrafting(action.target);
+            console.log(`[AI Agent] Initiated crafting of ${action.target}`);
+          } else {
+            console.error('[AI Agent] startCrafting function not found.');
           }
           break;
       }
@@ -721,14 +765,24 @@ if (gameState && gameState.quests) {
     // Update the file directly (this is a placeholder, implement file update logic)
     console.log(`Updating file: ${filePath}`);
     console.log(`New content:\n${fileContent}`);
-    // Simulate file update
-    // In a real implementation, you would use an API or file system access to update the file
-    localStorage.setItem('ai_agent_mods', JSON.stringify(mods));
-    // Actually update the file using file system access or API
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/update-file', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify({ path: filePath, content: fileContent }));
+    console.log(`[AI Agent] Applying modification: ${mod.description}`);
+    try {
+      const response = await fetch('http://localhost:3000/update-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filePath: mod.file, content: mod.code }),
+      });
+      console.log(response);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      console.log(`[AI Agent] File ${mod.file} updated successfully on server.`);
+    } catch (error) {
+      console.error(`[AI Agent] Error updating file ${mod.file}:`, error);
+    }
   }
 
   // === UTILITY FUNCTIONS ===
