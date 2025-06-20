@@ -817,19 +817,20 @@ if (gameState && gameState.quests) {
     let targetFileName; // e.g., 'entities.json', 'maps.json', 'state.json'
 
     if (mod.type === 'entity_update' || mod.type === 'feature') {
-      dataToSave = window.entities; // Send the whole entities object
+      dataToSave = entities; // Send the whole entities object
       targetFileName = 'data/entities.json';
     } else if (mod.type === 'map' || mod.type === 'balance') {
-      dataToSave = window.maps; // Send the whole maps object
+      dataToSave = maps; // Send the whole maps object
       targetFileName = 'data/maps.json';
     } else if (mod.type === 'quest' || mod.type === 'helper') {
-      dataToSave = window.gameState; // Send the whole gameState object
+      dataToSave = gameState; // Send the whole gameState object
       targetFileName = 'data/state.json';
     }
     // Use JSON.stringify for robust serialization
     const contentString = JSON.stringify(dataToSave, null, 2);
 
     try {
+      console.log(`[AI Agent] Sending modification ${mod.description} to server: ${targetFileName}`);
       const response = await fetch('http://localhost:3000/update-data-file', { // New endpoint
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
