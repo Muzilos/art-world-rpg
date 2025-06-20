@@ -1,5 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+let previousStats = null;
+let previousBackpack = null;
+let previousHP = null;
 
 /**
  * Draws all game elements onto the canvas.
@@ -80,7 +83,7 @@ function draw() {
 
 /**
  * Updates the content and visibility of the DOM-based UI overlay elements.
- * This includes the stats panel (skills, backpack).
+ * Only updates when data has actually changed to preserve hover states.
  */
 function updateUIOverlay() {
   updateHPBar();
@@ -90,65 +93,83 @@ function updateUIOverlay() {
 
 function updateHPBar() {
   const stats = gameState.player.stats;
-  const hpRatio = stats.hp / stats.maxHp;
+  const currentHP = { hp: stats.hp, maxHp: stats.maxHp };
 
-  const hpFill = document.getElementById('hpFill');
-  const hpText = document.getElementById('hpText');
+  // Only update if HP has changed
+  if (!previousHP || previousHP.hp !== currentHP.hp || previousHP.maxHp !== currentHP.maxHp) {
+    const hpRatio = stats.hp / stats.maxHp;
+    const hpFill = document.getElementById('hpFill');
+    const hpText = document.getElementById('hpText');
 
-  hpFill.style.width = (hpRatio * 100) + '%';
-  hpText.textContent = `${stats.hp}/${stats.maxHp}`;
+    hpFill.style.width = (hpRatio * 100) + '%';
+    hpText.textContent = `${stats.hp}/${stats.maxHp}`;
 
-  // Color based on HP level
-  if (hpRatio > 0.6) {
-    hpFill.style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
-  } else if (hpRatio > 0.3) {
-    hpFill.style.background = 'linear-gradient(90deg, #ed8936, #dd6b20)';
-  } else {
-    hpFill.style.background = 'linear-gradient(90deg, #f56565, #e53e3e)';
+    // Color based on HP level
+    if (hpRatio > 0.6) {
+      hpFill.style.background = 'linear-gradient(90deg, #48bb78, #38a169)';
+    } else if (hpRatio > 0.3) {
+      hpFill.style.background = 'linear-gradient(90deg, #ed8936, #dd6b20)';
+    } else {
+      hpFill.style.background = 'linear-gradient(90deg, #f56565, #e53e3e)';
+    }
+
+    previousHP = { ...currentHP };
   }
 }
 
 function updateStatsPanel() {
-  const skillList = document.getElementById('skillList');
   const stats = gameState.player.stats;
+  const currentStats = JSON.stringify(stats.skills);
 
-  skillList.innerHTML = '';
+  // Only update if stats have changed
+  if (previousStats !== currentStats) {
+    const skillList = document.getElementById('skillList');
+    skillList.innerHTML = '';
 
-  Object.keys(stats.skills).forEach(skill => {
-    const skillData = stats.skills[skill];
-    const abbrev = skillAbbreviations[skill];
+    Object.keys(stats.skills).forEach(skill => {
+      const skillData = stats.skills[skill];
+      const abbrev = skillAbbreviations[skill];
 
-    const skillRow = document.createElement('div');
-    skillRow.className = 'skill-row';
+      const skillRow = document.createElement('div');
+      skillRow.className = 'skill-row';
 
-    skillRow.innerHTML = `
-          <span class="skill-name">${abbrev.icon} ${abbrev.abbr}</span>
-          <span class="skill-level">L${skillData.level}</span>
-          <span class="skill-xp">${skillData.xp}/${skillData.xpToNextLevel}</span>
-        `;
+      skillRow.innerHTML = `
+        <span class="skill-name">${abbrev.icon} ${abbrev.abbr}</span>
+        <span class="skill-level">L${skillData.level}</span>
+        <span class="skill-xp">${skillData.xp}/${skillData.xpToNextLevel}</span>
+      `;
 
-    skillList.appendChild(skillRow);
-  });
+      skillList.appendChild(skillRow);
+    });
+
+    previousStats = currentStats;
+  }
 }
 
 function updateBackpackPanel() {
-  const backpackList = document.getElementById('backpackList');
   const backpack = gameState.player.backpack;
+  const currentBackpack = JSON.stringify(backpack);
 
-  backpackList.innerHTML = '';
+  // Only update if backpack has changed
+  if (previousBackpack !== currentBackpack) {
+    const backpackList = document.getElementById('backpackList');
+    backpackList.innerHTML = '';
 
-  if (backpack.length === 0) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.textContent = 'Empty';
-    emptyDiv.style.opacity = '0.6';
-    emptyDiv.style.fontStyle = 'italic';
-    backpackList.appendChild(emptyDiv);
-  } else {
-    backpack.forEach(item => {
-      const itemDiv = document.createElement('div');
-      itemDiv.className = 'backpack-item';
-      itemDiv.textContent = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      backpackList.appendChild(itemDiv);
-    });
+    if (backpack.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.textContent = 'Empty';
+      emptyDiv.style.opacity = '0.6';
+      emptyDiv.style.fontStyle = 'italic';
+      backpackList.appendChild(emptyDiv);
+    } else {
+      backpack.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'backpack-item';
+        itemDiv.textContent = item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        backpackList.appendChild(itemDiv);
+      });
+    }
+
+    previousBackpack = currentBackpack;
   }
 }

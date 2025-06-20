@@ -143,13 +143,19 @@ function initializeEventListeners() {
 
   // Event listener for clicks on the game canvas
   canvas.addEventListener('click', (event) => {
-    // CLose any open dialogue box when clicking on the canvas
+    // Close any open dialogue box when clicking on the canvas
     closeDialogue();
 
     // Get canvas position and calculate clicked tile coordinates
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+
+    // Calculate the actual canvas size vs rendered size
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    // Get mouse position relative to canvas and account for scaling
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
 
     // Check if the click occurred within the stats panel DOM element
     const statsPanel = statsPanelElement;
@@ -162,15 +168,19 @@ function initializeEventListeners() {
       }
     }
 
+    // Convert to tile coordinates
     let tileX = Math.floor(mouseX / TILE_SIZE);
     let tileY = Math.floor(mouseY / TILE_SIZE);
+
+    // Ensure tile coordinates are within map bounds
+    const map = maps[gameState.currentMap];
+    tileX = Math.max(0, Math.min(tileX, map.width - 1));
+    tileY = Math.max(0, Math.min(tileY, map.height - 1));
 
     // Update click marker to show where the user clicked
     gameState.clickMarker.x = tileX;
     gameState.clickMarker.y = tileY;
     gameState.clickMarker.type = 'normal'; // Default type
-
-    const map = maps[gameState.currentMap]; // Get current map data
 
     // Check for entity interaction
     const entity = (entities[gameState.currentMap] || []).find(c => c.x === tileX && c.y === tileY);
