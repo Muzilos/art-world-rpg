@@ -117,7 +117,46 @@
       </div>
     </div>
   </div>
-
+  <!-- AI Visualization Panel -->
+  <div class="ai-visualization" id="aiVisualization" style="display: none;">
+    <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #90cdf4;">🤖 AI Agent Mind</h3>
+    
+    <div class="emotion-section">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Boredom</span>
+        <span id="boredomValue">0</span>
+      </div>
+      <div class="emotion-bar">
+        <div class="emotion-fill" id="boredomBar" style="background: #fbbf24; width: 0%;"></div>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Frustration</span>
+        <span id="frustrationValue">0</span>
+      </div>
+      <div class="emotion-bar">
+        <div class="emotion-fill" id="frustrationBar" style="background: #f87171; width: 0%;"></div>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Curiosity</span>
+        <span id="curiosityValue">100</span>
+      </div>
+      <div class="emotion-bar">
+        <div class="emotion-fill" id="curiosityBar" style="background: #a78bfa; width: 100%;"></div>
+      </div>
+    </div>
+    
+    <div class="ai-thought" id="aiThought">
+      Initializing...
+    </div>
+    
+    <div style="margin-top: 10px; font-size: 10px; opacity: 0.7;">
+      <div>Locations visited: <span id="locationsVisited">0</span></div>
+      <div>NPCs met: <span id="npcsKnown">0</span></div>
+      <div>Last action: <span id="lastAction">None</span></div>
+    </div>
+  </div>
   <!-- Game Scripts -->
   <script src="js/entities.js"></script>
   <script src="js/state.js"></script>
@@ -127,6 +166,65 @@
   <script src="js/ui.js"></script>
   <script src="js/crafting.js"></script>
   <script src="js/main.js"></script>
+  <!-- Load AI Agent -->
+     
+  <!-- Include the full AI Agent code -->
+  <script src="ai-agent.js"></script>
+
+  <script>
+    // Insert the AI Agent code here or load from external file
+    // Copy the entire AI Agent code from the first artifact
+    
+    // Enhanced visualization updates
+    let aiVisualizationInterval;
+    
+    function updateAIVisualization() {
+      if (typeof aiAgent !== 'undefined' && aiAgent.isRunning) {
+        document.getElementById('aiVisualization').style.display = 'block';
+        
+        // Update emotion bars
+        document.getElementById('boredomValue').textContent = Math.round(aiAgent.emotionalState.boredom);
+        document.getElementById('boredomBar').style.width = aiAgent.emotionalState.boredom + '%';
+        
+        document.getElementById('frustrationValue').textContent = Math.round(aiAgent.emotionalState.frustration);
+        document.getElementById('frustrationBar').style.width = aiAgent.emotionalState.frustration + '%';
+        
+        document.getElementById('curiosityValue').textContent = Math.round(aiAgent.emotionalState.curiosity);
+        document.getElementById('curiosityBar').style.width = aiAgent.emotionalState.curiosity + '%';
+        
+        // Update stats
+        document.getElementById('locationsVisited').textContent = aiAgent.memory.visitedLocations.size;
+        document.getElementById('npcsKnown').textContent = aiAgent.memory.knownNPCs.size;
+        
+        // Update last action
+        if (aiAgent.memory.lastActions.length > 0) {
+          const lastAction = aiAgent.memory.lastActions[aiAgent.memory.lastActions.length - 1];
+          document.getElementById('lastAction').textContent = lastAction.description || lastAction.type;
+        }
+        
+        // Update thought bubble
+        const thoughts = [
+          aiAgent.emotionalState.boredom > 60 ? "I'm getting bored..." : null,
+          aiAgent.emotionalState.frustration > 60 ? "This is frustrating!" : null,
+          aiAgent.emotionalState.curiosity > 80 ? "I wonder what's over there?" : null,
+          aiAgent.memory.stuckCounter > 5 ? "I seem to be stuck..." : null,
+          Object.values(gameState.quests).some(q => q === 'accepted') ? "I should complete my quests." : null,
+          gameState.player.energy < 30 ? "I'm getting tired..." : null,
+          gameState.player.money > 200 ? "I'm doing well financially!" : null
+        ].filter(t => t !== null);
+        
+        if (thoughts.length > 0) {
+          document.getElementById('aiThought').textContent = thoughts[Math.floor(Math.random() * thoughts.length)];
+        }
+      } else {
+        document.getElementById('aiVisualization').style.display = 'none';
+      }
+    }
+    
+    // Start visualization updates
+    aiVisualizationInterval = setInterval(updateAIVisualization, 500);
+  </script>
+
 </body>
 
 </html>
