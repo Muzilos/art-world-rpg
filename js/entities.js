@@ -267,6 +267,7 @@ const gameActions = {
 // Art World entities with appropriate dialogue and quests
 const entities = {
   gallery_owner: {
+    name: "Gallery Owner",
     x: 8,
     y: 8,
     sprite: "#8b5cf6", // Purple
@@ -401,6 +402,7 @@ const entities = {
     }],
   },
   supply_store_owner: {
+    name: "Supply Store Owner",
     x: 15,
     y: 10,
     sprite: "#f59e0b", // Amber
@@ -492,6 +494,7 @@ const entities = {
     }
   },
   traveler: {
+    name: "Traveler",
     x: 3,
     y: 15,
     sprite: "#000000", // Black
@@ -577,6 +580,7 @@ const entities = {
     }],
   },
   barista: {
+    name: "Barista",
     x: 12,
     y: 8,
     sprite: '#8b4513', // Brown
@@ -637,6 +641,7 @@ const entities = {
     }
   },
   master_artist: {
+    name: "Master Artist",
     x: 10,
     y: 10,
     sprite: "#dc2626", // Red
@@ -710,6 +715,7 @@ const entities = {
     }]
   },
   ancient_tree: {
+    name: "Ancient Tree",
     x: 20,
     y: 12,
     sprite: "#dc2626", // Brown
@@ -799,6 +805,7 @@ const entities = {
     }]
   },
   hermit: {
+    name: "Hermit",
     x: 12,
     y: 9,
     dialogue: {
@@ -913,5 +920,397 @@ const entities = {
       conditions: [],
       targetState: 'start'
     }]
+  },
+  school_receptionist: {
+    name: "School Receptionist",
+    x: 12,
+    y: 8,
+    sprite: "#4a90e2", // Blue
+    dialogue: {
+      'start': {
+        text: `Welcome to the New York Art Academy! We offer classes in drawing, painting, and sculpture. Each wing specializes in different techniques.`,
+        options: [{
+          text: `Tell me about the classes.`,
+          nextState: 'class_info',
+        }, {
+          text: `How do I enroll?`,
+          nextState: 'enrollment_info',
+        }, {
+          text: `Thanks, I'll look around.`,
+          nextState: 'end',
+        }]
+      },
+      'class_info': {
+        text: `Our drawing classes focus on fundamental techniques and observational skills. Painting classes cover watercolor, oils, and acrylics. Sculpture classes teach clay modeling and casting.`,
+        options: [{
+          text: `That sounds great!`,
+          nextState: 'end',
+        }]
+      },
+      'enrollment_info': {
+        text: `Classes are $25 each and provide skill boosts plus valuable supplies. Visit each instructor to sign up for their specific workshops.`,
+        options: [{
+          text: `I'll check them out.`,
+          nextState: 'end',
+        }]
+      },
+      'end': {
+        text: `Enjoy exploring our facilities!`,
+        options: []
+      }
+    }
+  },
+
+  drawing_instructor: {
+    name: "Drawing Instructor",
+    x: 12,
+    y: 2,
+    sprite: "#ff6b35", // Orange
+    dialogue: {
+      'start': {
+        text: `I teach fundamental drawing techniques. My workshop covers line quality, shading, and proportion. Would you like to take my class for $25?`,
+        options: [{
+          text: `Yes, I'd like to take the class.`,
+          nextState: 'take_class',
+        }, {
+          text: `Maybe later.`,
+          nextState: 'end',
+        }]
+      },
+      'take_class': {
+        text: `Excellent! Here are some drawing exercises and techniques. Practice makes perfect!`,
+        options: [{
+          text: `Thank you for the lesson!`,
+          nextState: 'end',
+          actions: [{
+            "id": "spendMoney",
+            "params": {
+              "amount": 25
+            }
+          }, {
+            "id": "gainXp",
+            "params": {
+              "amounts": [100],
+              "skills": ["drawing"]
+            }
+          }, {
+            "id": "addItemToBackpack",
+            "params": {
+              "item": "charcoal"
+            }
+          }]
+        }]
+      },
+      'end': {
+        text: `Keep practicing your drawing skills!`,
+        options: []
+      }
+    }
+  },
+
+  painting_instructor: {
+    name: "Painting Instructor",
+    x: 12,
+    y: 6,
+    sprite: "#e74c3c", // Red
+    dialogue: {
+      'start': {
+        text: `I specialize in color theory and painting techniques. My workshop will teach you about mixing colors and brush control. Class fee is $25.`,
+        options: [{
+          text: `I'd love to learn!`,
+          nextState: 'take_class',
+        }, {
+          text: `Not right now.`,
+          nextState: 'end',
+        }]
+      },
+      'take_class': {
+        text: `Wonderful! Color is the soul of painting. Remember, warm colors advance, cool colors recede. Here are some premium paints!`,
+        options: [{
+          text: `This is incredibly helpful!`,
+          nextState: 'end',
+          actions: [{
+            "id": "spendMoney",
+            "params": {
+              "amount": 25
+            }
+          }, {
+            "id": "gainXp",
+            "params": {
+              "amounts": [100],
+              "skills": ["painting"]
+            }
+          }, {
+            "id": "addItemToBackpack",
+            "params": {
+              "item": "oil_paint"
+            }
+          }]
+        }]
+      },
+      'end': {
+        text: `Paint with passion!`,
+        options: []
+      }
+    }
+  },
+
+  sculpture_instructor: {
+    name: "Sculpture Instructor",
+    x: 12,
+    y: 8,
+    sprite: "#795548", // Brown
+    dialogue: {
+      'start': {
+        text: `Sculpture is about bringing life to clay and stone. My workshop covers hand-building and tool techniques. Ready to get your hands dirty for $25?`,
+        options: [{
+          text: `Absolutely!`,
+          nextState: 'take_class',
+        }, {
+          text: `I'll think about it.`,
+          nextState: 'end',
+        }]
+      },
+      'take_class': {
+        text: `Excellent! Feel the clay, understand its nature. Sculpture teaches patience and vision. Here are professional sculpting tools!`,
+        options: [{
+          text: `I can feel the difference already!`,
+          nextState: 'end',
+          actions: [{
+            "id": "spendMoney",
+            "params": {
+              "amount": 25
+            }
+          }, {
+            "id": "gainXp",
+            "params": {
+              "amounts": [100],
+              "skills": ["sculpting"]
+            }
+          }, {
+            "id": "addItemToBackpack",
+            "params": {
+              "item": "sculpting_tools"
+            }
+          }]
+        }]
+      },
+      'end': {
+        text: `Shape your dreams!`,
+        options: []
+      }
+    }
+  },
+
+  forest_spirit: {
+    name: "Forest Spirit",
+    x: 12,
+    y: 5,
+    sprite: "#00ff7f", // Spring green
+    dialogue: {
+      'start': {
+        text: `The forest whispers of ancient artistry... I sense creative energy within you. The deeper woods hold secrets for those pure of heart.`,
+        options: [{
+          text: `What kind of secrets?`,
+          nextState: 'secrets',
+        }, {
+          text: `I'm just exploring.`,
+          nextState: 'end',
+        }]
+      },
+      'secrets': {
+        text: `Natural pigments flow through these woods, and there's a sacred clearing where art comes alive. But only those who respect nature's balance may find them.`,
+        options: [{
+          text: `I respect nature deeply.`,
+          nextState: 'blessing',
+          actions: [{
+            "id": "gainXp",
+            "params": {
+              "amounts": [25],
+              "skills": ["creativity"]
+            }
+          }, {
+            "id": "restoreEnergy",
+            "params": {
+              "amount": 30
+            }
+          }]
+        }]
+      },
+      'blessing': {
+        text: `Your spirit is pure. The forest blesses your journey. May your art flourish like the wildflowers.`,
+        options: [{
+          text: `Thank you, forest spirit.`,
+          nextState: 'end'
+        }]
+      },
+      'end': {
+        text: `Walk gently, create boldly...`,
+        options: []
+      }
+    }
+  },
+
+  nature_artist: {
+    name: "Nature Artist",
+    x: 12,
+    y: 9,
+    sprite: "#228b22", // Forest green
+    dialogue: {
+      'start': {
+        text: `I've been painting nature here for decades. This clearing has perfect light and inspiration. The pond reflects colors like nowhere else.`,
+        options: [{
+          text: `Can you teach me about plein air painting?`,
+          nextState: 'teach_plein_air',
+        }, {
+          text: `It's beautiful here.`,
+          nextState: 'end',
+        }]
+      },
+      'teach_plein_air': {
+        text: `Painting outdoors teaches you to see light as it truly is - always changing, always alive. Here, take this field easel as a gift.`,
+        options: [{
+          text: `This is wonderful, thank you!`,
+          nextState: 'end',
+          actions: [{
+            "id": "addItemToBackpack",
+            "params": {
+              "item": "field_easel"
+            }
+          }, {
+            "id": "gainXp",
+            "params": {
+              "amounts": [50, 25],
+              "skills": ["painting", "creativity"]
+            }
+          }]
+        }]
+      },
+      'end': {
+        text: `Paint what you feel, not just what you see.`,
+        options: []
+      }
+    }
+  },
+
+  mystical_easel: {
+    name: "Mystical Easel",
+    x: 12,
+    y: 6,
+    sprite: "#9370db", // Medium purple
+    dialogue: {
+      'start': {
+        text: `This ancient easel hums with magical energy. Paintings created here seem to come alive with extraordinary beauty.`,
+        options: [{
+          text: `Try painting on the mystical easel.`,
+          nextState: 'use_easel',
+        }, {
+          text: `Just admire it.`,
+          nextState: 'end'
+        }]
+      },
+      'use_easel': {
+        text: `As you paint, the colors seem to glow and dance. Your artwork transcends the ordinary - this is truly magical!`,
+        options: [{
+          text: `Incredible!`,
+          nextState: 'end',
+          actions: [{
+            "id": "gainXp",
+            "params": {
+              "amounts": [150, 100],
+              "skills": ["creativity", "painting"]
+            }
+          }, {
+            "id": "addItemToBackpack",
+            "params": {
+              "item": "enchanted_painting"
+            }
+          }]
+        }]
+      },
+      'end': {
+        text: `The easel awaits the next inspired artist...`,
+        options: []
+      }
+    }
+  },
+  quest_board: {
+    name: 'Quest Board',
+    x: 20,
+    y: 12,
+    sprite: "#8b4513", // Brown
+    dialogue: {
+      'start': {
+        text: `📋 COMMUNITY QUEST BOARD 📋\n\n🎨 Art School Tours Available!\n🌲 Forest Expeditions Forming\n✨ Mystical Art Challenges\n🏆 Master Artist Competitions`,
+        options: [{
+          text: `Take on the Art School Challenge`,
+          nextState: 'school_quest',
+        }, {
+          text: `Accept Forest Exploration Quest`,
+          nextState: 'forest_quest',
+        }, {
+          text: `Try the Mystical Art Challenge`,
+          nextState: 'mystical_quest',
+        }, {
+          text: `Just browsing`,
+          nextState: 'end',
+        }]
+      },
+      'school_quest': {
+        text: `🏫 ART SCHOOL EXPLORATION: Visit all three studio classrooms and take at least one class. Reward: Advanced supplies and networking boost!`,
+        options: [{
+          text: `Accept the challenge!`,
+          nextState: 'end',
+          actions: [{
+            "id": "changeQuestState",
+            "params": {
+              "questId": "artSchoolExploration",
+              "newState": "accepted"
+            }
+          }]
+        }, {
+          text: `Maybe later`,
+          nextState: 'start'
+        }]
+      },
+      'forest_quest': {
+        text: `🌲 DEEP FOREST EXPEDITION: Explore the forest depths, find the mystical clearing, and discover the hidden grove. Reward: Rare materials and nature's blessing!`,
+        options: [{
+          text: `I'm ready for adventure!`,
+          nextState: 'end',
+          actions: [{
+            "id": "changeQuestState",
+            "params": {
+              "questId": "forestDepths",
+              "newState": "accepted"
+            }
+          }]
+        }, {
+          text: `Not today`,
+          nextState: 'start'
+        }]
+      },
+      'mystical_quest': {
+        text: `✨ MYSTICAL ART CHALLENGE: Create an enchanted artwork using the mystical easel hidden deep in the forest. Reward: ???`,
+        options: [{
+          text: `Accept the mystical challenge!`,
+          nextState: 'end',
+          actions: [{
+            "id": "changeQuestState",
+            "params": {
+              "questId": "mysticalArt",
+              "newState": "accepted"
+            }
+          }]
+        }, {
+          text: `Too mysterious for me`,
+          nextState: 'start'
+        }]
+      },
+      'end': {
+        text: `Good luck with your artistic journey!`,
+        options: []
+      }
+    }
   }
 };

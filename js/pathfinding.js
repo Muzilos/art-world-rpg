@@ -51,7 +51,7 @@ function getNeighbors(node, map) {
       const newX = node.x + dx, newY = node.y + dy;
       if (newX >= 0 && newX < map.width && newY >= 0 && newY < map.height) {
         const tileIndex = newY * map.width + newX;
-        if (map.tiles[tileIndex] !== 1 && map.tiles[tileIndex] !== 2) {
+        if (!unwalkableTiles.includes(map.tiles[tileIndex])) {
           neighbors.push({ x: newX, y: newY });
         }
       }

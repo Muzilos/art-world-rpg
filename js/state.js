@@ -7,7 +7,9 @@ const skillAbbreviations = {
   influence: { abbr: 'INF', icon: '⭐' },
   creativity: { abbr: 'CRE', icon: '💡' },
   networking: { abbr: 'NET', icon: '🤝' },
-  business: { abbr: 'BIZ', icon: '💼' }
+  business: { abbr: 'BIZ', icon: '💼' },
+  observation: { abbr: 'OBS', icon: '👁️' },
+  patience: { abbr: 'PAT', icon: '⏳' }
 };
 
 // The central game state object for Art World RPG
@@ -82,6 +84,10 @@ const gameState = {
     galleryShow: 'not_started',     // Get accepted into a gallery show
     mentorQuest: 'not_started',     // Find and learn from a master artist
     findHermit: 'not_started',      // Find the hermit
-    rarePigment: 'not_started'      // Obtain the rare pigment 
+    rarePigment: 'not_started',      // Obtain the rare pigment
+    artSchoolExploration: 'not_started',  // Explore the art school
+    forestDepths: 'not_started',          // Explore the deeper forest
+    mysticalArt: 'not_started',           // Create art with the mystical easel
+    masterAllSkills: 'not_started',       // Reach level 3 in all art skills
   }
 };

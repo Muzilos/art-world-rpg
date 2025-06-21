@@ -10,6 +10,13 @@ const showDialogue = (entity, stateKey) => { // Changed to const arrow function
   const dialogueNode = entity.dialogue[stateKey];
   if (!dialogueNode) { closeDialogue(); return; } // closeDialogue is now defined
 
+  // Update header
+  // const entityIcon = document.getElementById('entityIcon');
+  // if (entityIcon) entityIcon.textContent = entityInfo.icon;
+  const entityName = document.getElementById('entityName');
+  if (entityName) entityName.textContent = entity.name || "Entity";
+
+  // Update dialogue
   document.getElementById('dialogueText').textContent = dialogueNode.text;
   const optionsContainer = document.getElementById('dialogueOptions');
   const closeButton = document.getElementById('closeDialogue');
@@ -78,7 +85,7 @@ const showDialogue = (entity, stateKey) => { // Changed to const arrow function
                 }
               } catch (e) {
                 console.error(`Error executing action '${actionObj.id}':`, e);
-                showDialogue({id: 'SYSTEM', dialogue: {'error': {text: `An error occurred: ${e.message}`, options: [{text: "OK", nextState: 'end'}]}}}, 'error');
+                showDialogue({ id: 'SYSTEM', dialogue: { 'error': { text: `An error occurred: ${e.message}`, options: [{ text: "OK", nextState: 'end' }] } } }, 'error');
               }
             } else {
               console.warn(`Action metadata for ID '${actionObj.id}' not found. Skipping action.`);
