@@ -33,7 +33,7 @@ const modalOptionNextStateInput = document.getElementById('modalOptionNextStateI
 const modalOptionActionsList = document.getElementById('modalOptionActionsList');
 const addOptionActionBtn = document.getElementById('addOptionAction');
 const saveDialogueOptionBtn = document.getElementById('saveDialogueOption');
-const cancelDialogueOptionEditingBtn = document.getElementById('cancelDialogueOptionEditing');
+const cancelDialogueOptionEditingBtn = document = document.getElementById('cancelDialogueOptionEditing');
 
 const actionModal = document.getElementById('actionModal');
 const actionTypeSelect = document.getElementById('actionTypeSelect');
@@ -61,6 +61,22 @@ const simulatorOutput = document.getElementById('simulatorOutput');
 const simulatorOptions = document.getElementById('simulatorOptions');
 const startDialogueSimulationBtn = document.getElementById('startDialogueSimulation');
 const resetDialogueSimulationBtn = document.getElementById('resetDialogueSimulation');
+
+// Simulator State Controls
+const simulatedGameStatePanel = document.getElementById('simulatedGameStatePanel');
+const toggleSimulatedGameState = document.getElementById('toggleSimulatedGameState');
+const simulatedGameStateContent = document.getElementById('simulatedGameStateContent');
+
+const simMoneyInput = document.getElementById('simMoneyInput');
+const updateSimMoneyBtn = document.getElementById('updateSimMoney');
+
+const simBackpackList = document.getElementById('simBackpackList');
+const simBackpackAddItemNameInput = document.getElementById('simBackpackAddItemName');
+const simBackpackAddItemQuantityInput = document.getElementById('simBackpackAddItemQuantity');
+const simBackpackAddItemBtn = document.getElementById('simBackpackAddItem');
+
+const simQuestsList = document.getElementById('simQuestsList');
+
 
 // Variables to keep track of what's being edited in modals
 let currentEditingDialogueStateId = null;
@@ -494,8 +510,14 @@ function renderActionParameters(actionId, params = {}) {
                             itemInput.type = 'number';
                             itemInput.value = itemValue;
                         } else { // list(string)
-                            itemInput = document.createElement('input');
-                            itemInput.type = 'text';
+                            itemInput = document.createElement('select'); // Use select for skills list
+                            const skillOptions = param.options(); // Assuming param.options is a function returning available skills
+                            skillOptions.forEach(skillId => {
+                                const option = document.createElement('option');
+                                option.value = skillId;
+                                option.textContent = skillId;
+                                itemInput.appendChild(option);
+                            });
                             itemInput.value = itemValue;
                         }
                         itemInput.style.flexGrow = '1';
@@ -534,7 +556,14 @@ function renderActionParameters(actionId, params = {}) {
                 addItemBtn.style.width = 'fit-content';
                 addItemBtn.style.fontSize = '0.9rem';
                 addItemBtn.addEventListener('click', () => {
-                    currentList.push(param.type === 'list(number)' ? 0 : ''); // Add default empty value
+                    // Provide a default value for new list items
+                    let defaultValue = '';
+                    if (param.type === 'list(number)') {
+                        defaultValue = 0;
+                    } else if (param.type === 'list(string)' && typeof param.options === 'function' && param.options().length > 0) {
+                        defaultValue = param.options()[0]; // Default to first available skill
+                    }
+                    currentList.push(defaultValue);
                     renderListItems();
                 });
 
@@ -904,8 +933,15 @@ document.addEventListener('click', (e) => {
         if (modalId === 'actionModal') currentEditingActionIndex = null;
         if (modalId === 'logicRuleModal') currentEditingLogicRuleIndex = null;
         if (modalId === 'conditionModal') currentEditingConditionIndex = null;
-    } else if (e.target.classList.contains('modal')) { // Click outside content
+    } else if (e.target.classList.contains('modal') && e.target.id.includes('Modal')) { // Click outside content, specifically for modals
         e.target.style.display = 'none';
+        // Reset contexts on outside click close too
+        const modalId = e.target.id;
+        if (modalId === 'dialogueStateModal') currentEditingDialogueStateId = null;
+        if (modalId === 'dialogueOptionModal') currentEditingOptionIndex = null;
+        if (modalId === 'actionModal') currentEditingActionIndex = null;
+        if (modalId === 'logicRuleModal') currentEditingLogicRuleIndex = null;
+        if (modalId === 'conditionModal') currentEditingConditionIndex = null;
     }
 });
 
@@ -914,18 +950,71 @@ document.addEventListener('click', (e) => {
 
 // Mock game state for simulation purposes
 let simulatedGameState = {
-    quests: {},
+    quests: {}, /* */
     player: {
-        backpack: {},
-        money: 0,
-        energy: 0,
-        maxEnergy: 0,
+        backpack: {}, /* */
+        money: 0, /* */
+        energy: 0, /* */
+        maxEnergy: 0, /* */
         stats: {
             hp: 100, maxHp: 100,
-            skills: {}
+            skills: {} /* */
         }
     }
 };
+
+/**
+ * Renders the current simulated game state in the simulator panel.
+ */
+function renderSimulatedGameState() {
+    simMoneyInput.value = simulatedGameState.player.money; /* */
+
+    // Render Backpack
+    simBackpackList.innerHTML = '';
+    const backpackItems = Object.keys(simulatedGameState.player.backpack); /* */
+    if (backpackItems.length === 0) {
+        simBackpackList.innerHTML = '<p style="opacity: 0.7; font-style: italic;">Backpack is empty.</p>';
+    } else {
+        backpackItems.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'sim-list-item';
+            div.innerHTML = `
+                <span>${item} (${simulatedGameState.player.backpack[item]})</span>
+                <button class="delete-sim-item-btn delete" data-item-id="${item}">X</button>
+            `;
+            simBackpackList.appendChild(div);
+        });
+    }
+
+    // Render Quests
+    simQuestsList.innerHTML = '';
+    const questIds = Object.keys(simulatedGameState.quests); /* */
+    if (questIds.length === 0) {
+        simQuestsList.innerHTML = '<p style="opacity: 0.7; font-style: italic;">No quests defined.</p>';
+    } else {
+        questIds.forEach(questId => {
+            const div = document.createElement('div');
+            div.className = 'sim-list-item';
+            const select = document.createElement('select');
+            select.dataset.questId = questId;
+            ['not_started', 'accepted', 'in_progress', 'completed', 'rewarded'].forEach(status => {
+                const option = document.createElement('option');
+                option.value = status;
+                option.textContent = status;
+                select.appendChild(option);
+            });
+            select.value = simulatedGameState.quests[questId]; /* */
+            select.addEventListener('change', (e) => {
+                simulatedGameState.quests[questId] = e.target.value; /* */
+                appendSimulationMessage(`Simulated Quest '${questId}' set to '${e.target.value}'.`, 'info'); /* */
+            });
+
+            div.innerHTML = `<span>${questId}: </span>`;
+            div.appendChild(select);
+            simQuestsList.appendChild(div);
+        });
+    }
+}
 
 /**
  * Resets the dialogue simulator to its initial state.
@@ -936,8 +1025,9 @@ function resetDialogueSimulator() {
     startDialogueSimulationBtn.style.display = 'block';
     resetDialogueSimulationBtn.style.display = 'none';
     dialogueSimulator.style.background = '#313d4f'; // Default background
+    resetDialogueSimulationBtn.textContent = '🔄 Reset Simulation'; // Reset button text
 
-    // Reset simulated game state based on current builder data
+    // Reset simulated game state based on original loaded game state (for fresh start)
     simulatedGameState.quests = JSON.parse(JSON.stringify(builderQuests)); /* */
     simulatedGameState.player.backpack = JSON.parse(JSON.stringify(gameState.player.backpack)); /* */
     simulatedGameState.player.money = gameState.player.money; /* */
@@ -945,6 +1035,7 @@ function resetDialogueSimulator() {
     simulatedGameState.player.maxEnergy = gameState.player.maxEnergy; /* */
     simulatedGameState.player.stats.skills = JSON.parse(JSON.stringify(gameState.player.stats.skills)); /* */
     
+    renderSimulatedGameState(); // Render the reset state
     appendSimulationMessage("Simulation ready. Click 'Start Simulation'.");
 }
 
@@ -1006,6 +1097,11 @@ function simulateDialogueState(stateId) {
     
     if (!entity.dialogue[stateId]) { /* */
         appendSimulationMessage(`Error: Dialogue state '${stateId}' not found for entity '${currentEditingEntityId}'. Ending simulation.`, 'error');
+        // Provide restart option
+        const restartButton = document.createElement('button');
+        restartButton.textContent = 'Restart Dialogue';
+        restartButton.addEventListener('click', () => resetDialogueSimulator());
+        simulatorOptions.appendChild(restartButton);
         return;
     }
 
@@ -1038,9 +1134,14 @@ function simulateDialogueState(stateId) {
 
     appendSimulationMessage(`[${currentEditingEntityId}] says: "${currentState.text}"`, 'dialogue'); /* */
 
-    if (!currentState.options || currentState.options.length === 0) { /* */
-        appendSimulationMessage("No options. Dialogue ends.", 'info');
-        resetDialogueSimulationBtn.textContent = 'End Simulation'; // Change button text to reflect ending
+    // Crucial change here:
+    // If there are no options OR if the nextState is explicitly 'end', provide a restart button.
+    if (!currentState.options || currentState.options.length === 0 || (currentState.options.length === 1 && currentState.options[0].nextState === 'end')) {
+        appendSimulationMessage("Dialogue concludes.", 'info');
+        const restartButton = document.createElement('button');
+        restartButton.textContent = 'Restart Dialogue';
+        restartButton.addEventListener('click', () => simulateDialogueState('start')); // Restart from 'start'
+        simulatorOptions.appendChild(restartButton);
         return;
     }
 
@@ -1062,12 +1163,15 @@ function simulateDialogueState(stateId) {
                     appendSimulationMessage(`    Warning: Unknown action ID: ${action.id}`, 'error'); /* */
                 }
             });
-            // Move to next state
+            // Move to next state (or end if no nextState or nextState is 'end')
             if (option.nextState) { /* */
                 simulateDialogueState(option.nextState); /* */
             } else {
-                appendSimulationMessage("No next state defined. Dialogue ends.", 'info');
-                resetDialogueSimulationBtn.textContent = 'End Simulation';
+                 appendSimulationMessage("Dialogue concludes.", 'info');
+                const restartButton = document.createElement('button');
+                restartButton.textContent = 'Restart Dialogue';
+                restartButton.addEventListener('click', () => simulateDialogueState('start'));
+                simulatorOptions.appendChild(restartButton);
             }
         });
         simulatorOptions.appendChild(optionButton);
@@ -1165,9 +1269,37 @@ function simulateGameAction(actionId, params) {
             break;
     }
     appendSimulationMessage(message, 'action');
-    // Display current simulated state after action
-    appendSimulationMessage(`      (Sim State) Money: $${simulatedGameState.player.money}, Backpack: ${JSON.stringify(simulatedGameState.player.backpack)}, Quests: ${JSON.stringify(simulatedGameState.quests)}`, 'info'); /* */
+    renderSimulatedGameState(); // Re-render the state after an action
 }
+
+
+// --- Modal Utility Functions ---
+function closeModal(modalElement) {
+    modalElement.style.display = 'none';
+}
+
+// Global event listener for closing modals (using event delegation)
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('close-button')) {
+        const modalId = e.target.dataset.modalId;
+        closeModal(document.getElementById(modalId));
+        // Reset specific editing contexts
+        if (modalId === 'dialogueStateModal') currentEditingDialogueStateId = null;
+        if (modalId === 'dialogueOptionModal') currentEditingOptionIndex = null;
+        if (modalId === 'actionModal') currentEditingActionIndex = null;
+        if (modalId === 'logicRuleModal') currentEditingLogicRuleIndex = null;
+        if (modalId === 'conditionModal') currentEditingConditionIndex = null;
+    } else if (e.target.classList.contains('modal') && e.target.id.includes('Modal')) { // Click outside content, specifically for modals
+        e.target.style.display = 'none';
+        // Reset contexts on outside click close too
+        const modalId = e.target.id;
+        if (modalId === 'dialogueStateModal') currentEditingDialogueStateId = null;
+        if (modalId === 'dialogueOptionModal') currentEditingOptionIndex = null;
+        if (modalId === 'actionModal') currentEditingActionIndex = null;
+        if (modalId === 'logicRuleModal') currentEditingLogicRuleIndex = null;
+        if (modalId === 'conditionModal') currentEditingConditionIndex = null;
+    }
+});
 
 
 // --- Event Listeners for new modal elements (moved and added) ---
@@ -1184,7 +1316,7 @@ cancelDialogueOptionEditingBtn.addEventListener('click', () => closeModal(dialog
 
 // Listeners for Action Modal
 addOptionActionBtn.addEventListener('click', () => openActionModal());
-actionTypeSelect.addEventListener('change', (e) => renderActionParameters(e.target.value));
+actionTypeSelect.addEventListener('change', (e) => renderActionParameters(e.target.value, {})); // Pass empty params for new selection
 saveActionBtn.addEventListener('click', saveAction);
 cancelActionEditingBtn.addEventListener('click', () => closeModal(actionModal));
 
@@ -1195,7 +1327,7 @@ cancelLogicRuleEditingBtn.addEventListener('click', () => closeModal(logicRuleMo
 
 // Listeners for Condition Modal
 addLogicRuleConditionBtn.addEventListener('click', () => openConditionModal());
-conditionTypeSelect.addEventListener('change', (e) => renderConditionParameters(e.target.value));
+conditionTypeSelect.addEventListener('change', (e) => renderConditionParameters(e.target.value, {})); // Pass empty params for new selection
 saveConditionBtn.addEventListener('click', saveCondition);
 cancelConditionEditingBtn.addEventListener('click', () => closeModal(conditionModal));
 
@@ -1203,3 +1335,44 @@ cancelConditionEditingBtn.addEventListener('click', () => closeModal(conditionMo
 // Listeners for Dialogue Simulator
 startDialogueSimulationBtn.addEventListener('click', startDialogueSimulation);
 resetDialogueSimulationBtn.addEventListener('click', resetDialogueSimulator);
+
+toggleSimulatedGameState.addEventListener('click', () => {
+    simulatedGameStateContent.classList.toggle('collapsed');
+    toggleSimulatedGameState.classList.toggle('collapsed');
+});
+
+updateSimMoneyBtn.addEventListener('click', () => {
+    const newMoney = parseInt(simMoneyInput.value);
+    if (!isNaN(newMoney) && newMoney >= 0) {
+        simulatedGameState.player.money = newMoney; /* */
+        appendSimulationMessage(`Simulated Money set to $${newMoney}.`, 'info'); /* */
+        renderSimulatedGameState();
+    } else {
+        alert("Please enter a valid non-negative number for money.");
+    }
+});
+
+simBackpackAddItemBtn.addEventListener('click', () => {
+    const itemId = simBackpackAddItemNameInput.value.trim();
+    const quantity = parseInt(simBackpackAddItemQuantityInput.value);
+    if (itemId && !isNaN(quantity) && quantity > 0) {
+        simulatedGameState.player.backpack[itemId] = (simulatedGameState.player.backpack[itemId] || 0) + quantity; /* */
+        appendSimulationMessage(`Added ${quantity}x '${itemId}' to simulated backpack.`, 'info'); /* */
+        simBackpackAddItemNameInput.value = '';
+        simBackpackAddItemQuantityInput.value = 1;
+        renderSimulatedGameState();
+    } else {
+        alert("Please enter a valid item ID and a positive quantity.");
+    }
+});
+
+simBackpackList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('delete-sim-item-btn')) {
+        const itemId = e.target.dataset.itemId;
+        if (confirm(`Remove all '${itemId}' from simulated backpack?`)) {
+            delete simulatedGameState.player.backpack[itemId]; /* */
+            appendSimulationMessage(`Removed all '${itemId}' from simulated backpack.`, 'info');
+            renderSimulatedGameState();
+        }
+    }
+});

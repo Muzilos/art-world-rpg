@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,61 +10,86 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             display: flex;
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text */
+            background-color: #1a202c;
+            /* Dark background */
+            color: #e2e8f0;
+            /* Light text */
             height: 100vh;
-            overflow: hidden; /* Prevent body scroll */
+            overflow: hidden;
+            /* Prevent body scroll */
         }
+
         #sidebar {
-            width: 220px; /* Slightly wider sidebar */
-            background-color: #2d3748; /* Darker sidebar */
+            width: 220px;
+            /* Slightly wider sidebar */
+            background-color: #2d3748;
+            /* Darker sidebar */
             padding: 15px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
-            flex-shrink: 0; /* Don't shrink sidebar */
+            flex-shrink: 0;
+            /* Don't shrink sidebar */
         }
+
         #sidebar button {
             background-color: #4a5568;
             color: #e2e8f0;
             border: none;
-            padding: 12px 15px; /* Slightly larger buttons */
+            padding: 12px 15px;
+            /* Slightly larger buttons */
             margin-bottom: 8px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem; /* Base font size */
+            font-size: 1rem;
+            /* Base font size */
             text-align: left;
             transition: background-color 0.2s, transform 0.1s;
         }
+
         #sidebar button:hover {
-            background-color: #60a5fa; /* Blue on hover */
+            background-color: #60a5fa;
+            /* Blue on hover */
             transform: translateY(-1px);
         }
+
         #sidebar button.active {
-            background-color: #3182ce; /* Darker blue when active */
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+            background-color: #3182ce;
+            /* Darker blue when active */
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
         }
+
         #main-content {
             flex-grow: 1;
             padding: 20px;
-            overflow-y: auto; /* Allow content to scroll */
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-y: auto;
+            /* Allow content to scroll */
+            overflow-x: hidden;
+            /* Prevent horizontal scroll */
         }
+
         .module-section {
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
         }
+
         .module-section.active {
-            display: block; /* Shown when active */
+            display: block;
+            /* Shown when active */
         }
+
         h2 {
-            color: #4299e1; /* Blue heading */
+            color: #4299e1;
+            /* Blue heading */
             margin-top: 0;
             margin-bottom: 20px;
             border-bottom: 1px solid #4a5568;
             padding-bottom: 10px;
         }
+
         h3 {
-            color: #60a5fa; /* Lighter blue for subheadings */
+            color: #60a5fa;
+            /* Lighter blue for subheadings */
             margin-top: 15px;
             margin-bottom: 10px;
         }
@@ -72,52 +98,75 @@
         #mapEditorCanvas {
             border: 1px solid #4a5568;
             background-color: #000;
-            display: block; /* Ensure no extra space below canvas */
+            display: block;
+            /* Ensure no extra space below canvas */
             margin-top: 15px;
         }
+
         .map-tile-palette {
             display: flex;
-            gap: 8px; /* More space between tiles */
+            gap: 8px;
+            /* More space between tiles */
             margin-top: 10px;
             flex-wrap: wrap;
         }
+
         .map-tile-palette-item {
-            width: 36px; /* Slightly larger palette items */
+            width: 36px;
+            /* Slightly larger palette items */
             height: 36px;
-            border: 3px solid transparent; /* Thicker border */
+            border: 3px solid transparent;
+            /* Thicker border */
             cursor: pointer;
             transition: border-color 0.2s, transform 0.1s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            border-radius: 4px; /* Slightly rounded corners */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            /* Slightly rounded corners */
         }
+
         .map-tile-palette-item:hover {
             transform: translateY(-2px);
         }
+
         .map-tile-palette-item.selected {
-            border-color: #ecc94b; /* Yellow border for selected tile */
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6); /* Glow effect */
+            border-color: #ecc94b;
+            /* Yellow border for selected tile */
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+            /* Glow effect */
         }
-        .map-details, .list-container { /* Renamed map-list to list-container for generic use */
+
+        .map-details,
+        .list-container {
+            /* Renamed map-list to list-container for generic use */
             margin-top: 20px;
-            padding: 20px; /* More padding */
+            padding: 20px;
+            /* More padding */
             background-color: #2d3748;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
-        .list-item { /* Renamed map-list-item to list-item for generic use */
+
+        .list-item {
+            /* Renamed map-list-item to list-item for generic use */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0; /* More vertical padding */
-            border-bottom: 1px dashed #4a5568; /* Dashed separator */
+            padding: 10px 0;
+            /* More vertical padding */
+            border-bottom: 1px dashed #4a5568;
+            /* Dashed separator */
             font-size: 0.95rem;
         }
+
         .list-item:last-child {
             border-bottom: none;
         }
+
         .list-item button {
-            margin-left: 15px; /* More space */
-            padding: 6px 12px; /* Adjusted padding */
+            margin-left: 15px;
+            /* More space */
+            padding: 6px 12px;
+            /* Adjusted padding */
             font-size: 0.85rem;
             background-color: #4299e1;
             color: white;
@@ -126,6 +175,7 @@
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
         }
+
         .list-item button:hover {
             background-color: #3182ce;
             transform: translateY(-1px);
@@ -135,102 +185,148 @@
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
-            color: #a0aec0; /* Lighter label color */
+            color: #a0aec0;
+            /* Lighter label color */
             font-size: 0.9rem;
         }
-        input[type="text"], input[type="number"], textarea, select {
-            width: calc(100% - 22px); /* Account for padding + border */
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: calc(100% - 22px);
+            /* Account for padding + border */
             padding: 10px;
             margin-top: 5px;
             background-color: #4a5568;
-            border: 1px solid #60a5fa; /* Blue border */
+            border: 1px solid #60a5fa;
+            /* Blue border */
             border-radius: 5px;
             color: #e2e8f0;
             font-size: 1rem;
         }
-        input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
             outline: none;
-            border-color: #4299e1; /* Highlight on focus */
-            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5); /* Soft glow */
+            border-color: #4299e1;
+            /* Highlight on focus */
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+            /* Soft glow */
         }
+
         button {
             background-color: #4299e1;
             color: white;
             border: none;
-            padding: 12px 20px; /* Larger buttons */
+            padding: 12px 20px;
+            /* Larger buttons */
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s, transform 0.1s;
-            margin-right: 10px; /* Space between buttons */
+            margin-right: 10px;
+            /* Space between buttons */
         }
+
         button:hover {
             background-color: #3182ce;
             transform: translateY(-1px);
         }
+
         button.delete {
-            background-color: #e53e3e; /* Red for delete */
+            background-color: #e53e3e;
+            /* Red for delete */
         }
+
         button.delete:hover {
             background-color: #c53030;
         }
+
         button.add-item {
-            background-color: #48bb78; /* Green for add */
+            background-color: #48bb78;
+            /* Green for add */
         }
+
         button.add-item:hover {
             background-color: #38a169;
         }
-        
+
         /* Export/Import specific styles */
-        #exportData, #importButton {
+        #exportData,
+        #importButton {
             width: 100%;
             margin-top: 15px;
         }
+
         #importData {
-            display: none; /* Hide default file input */
+            display: none;
+            /* Hide default file input */
         }
+
         #importButton {
-            background-color: #ed8936; /* Orange for import */
+            background-color: #ed8936;
+            /* Orange for import */
         }
+
         #importButton:hover {
             background-color: #dd6b20;
         }
 
         /* Modal Styles */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
+            display: none;
+            /* Hidden by default */
+            position: fixed;
+            /* Stay in place */
+            z-index: 1000;
+            /* Sit on top */
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
-            backdrop-filter: blur(5px); /* Blurred background */
+            width: 100%;
+            /* Full width */
+            height: 100%;
+            /* Full height */
+            overflow: auto;
+            /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.7);
+            /* Black w/ opacity */
+            backdrop-filter: blur(5px);
+            /* Blurred background */
             -webkit-backdrop-filter: blur(5px);
-            justify-content: center; /* Center content horizontally */
-            align-items: center; /* Center content vertically */
+            justify-content: center;
+            /* Center content horizontally */
+            align-items: center;
+            /* Center content vertically */
         }
+
         .modal-content {
             background-color: #2d3748;
-            margin: auto; /* Center modal */
+            margin: auto;
+            /* Center modal */
             padding: 25px;
             border: 1px solid #4a5568;
             border-radius: 10px;
-            width: 80%; /* Could be responsive */
-            max-width: 700px; /* Max width for readability */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            width: 80%;
+            /* Could be responsive */
+            max-width: 700px;
+            /* Max width for readability */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             position: relative;
         }
+
         .modal-content h3 {
             color: #60a5fa;
             border-bottom: 1px solid #4a5568;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
+
         .close-button {
             color: #aaa;
             float: right;
@@ -242,28 +338,34 @@
             cursor: pointer;
             transition: color 0.2s;
         }
+
         .close-button:hover,
         .close-button:focus {
             color: #fff;
             text-decoration: none;
             cursor: pointer;
         }
-        .modal .list-item { /* Adjust list-item styling inside modals */
+
+        .modal .list-item {
+            /* Adjust list-item styling inside modals */
             background-color: #313d4f;
             padding: 8px 12px;
             margin-bottom: 5px;
             border-radius: 5px;
             border: none;
         }
+
         .modal .list-item button {
             padding: 4px 8px;
             font-size: 0.75rem;
             margin-left: 8px;
         }
+
         .modal textarea {
             min-height: 80px;
             resize: vertical;
         }
+
         .modal input[type="color"] {
             width: 50px;
             height: 30px;
@@ -274,16 +376,19 @@
             vertical-align: middle;
             margin-left: 10px;
         }
+
         .modal-actions {
             margin-top: 25px;
             text-align: right;
         }
+
         .modal-section {
             margin-bottom: 20px;
             padding: 15px;
             background-color: #313d4f;
             border-radius: 8px;
         }
+
         .modal-section h4 {
             color: #a0aec0;
             margin-top: 0;
@@ -291,8 +396,112 @@
             padding-bottom: 8px;
             margin-bottom: 15px;
         }
+
+        /* Simulator specific styles */
+        #simulatorOutput {
+            background-color: #1a202c;
+            border: 1px solid #4a5568;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 80px;
+            max-height: 250px;
+            /* Limit height for output */
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        #simulatorOptions button {
+            margin-top: 5px;
+            margin-right: 5px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        #simulatedGameStatePanel {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #3a475a;
+            /* Slightly lighter than parent section */
+            border-radius: 8px;
+            max-height: 300px;
+            /* Max height for state panel */
+            overflow-y: auto;
+            border: 1px solid #4a5568;
+        }
+
+        #simulatedGameStatePanel h4 {
+            cursor: pointer;
+            /* Indicate collapsible */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #5a6a7e;
+        }
+
+        #simulatedGameStatePanel h4::after {
+            content: '▼';
+            /* Down arrow for expanded */
+            font-size: 0.8em;
+            transition: transform 0.2s;
+        }
+
+        #simulatedGameStatePanel h4.collapsed::after {
+            content: '▶';
+            /* Right arrow for collapsed */
+            transform: rotate(0deg);
+        }
+
+        #simulatedGameStateContent {
+            display: block;
+            /* Default to expanded */
+        }
+
+        #simulatedGameStateContent.collapsed {
+            display: none;
+        }
+
+        .sim-control-group {
+            border: 1px dashed #5a6a7e;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .sim-control-group label {
+            font-size: 0.8rem;
+            color: #b0c2d4;
+        }
+
+        .sim-control-group input,
+        .sim-control-group select {
+            width: calc(100% - 16px);
+            padding: 6px;
+            font-size: 0.85rem;
+            background-color: #4a5568;
+            border: 1px solid #60a5fa;
+            color: #e2e8f0;
+            margin-bottom: 5px;
+        }
+
+        .sim-control-group button {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+        }
+
+        .sim-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #313d4f;
+            padding: 5px 8px;
+            border-radius: 4px;
+            margin-bottom: 3px;
+        }
     </style>
 </head>
+
 <body>
     <div id="sidebar">
         <button id="navMaps" class="active">🗺️ Maps</button>
@@ -305,7 +514,8 @@
 
         <button id="exportData">💾 Export Game Data (JSON)</button>
         <input type="file" id="importData" accept=".json">
-        <button id="importButton" onclick="document.getElementById('importData').click();">📥 Import Game Data (JSON)</button>
+        <button id="importButton" onclick="document.getElementById('importData').click();">📥 Import Game Data
+            (JSON)</button>
     </div>
 
     <div id="main-content">
@@ -314,7 +524,7 @@
             <div id="mapListContainer" class="list-container">
                 <h3>Existing Maps</h3>
                 <div id="mapsList">
-                    </div>
+                </div>
                 <button id="addNewMap" class="add-item">➕ Add New Map</button>
             </div>
 
@@ -334,10 +544,11 @@
                 </div>
 
                 <h3>Tile Palette</h3>
-                <p style="font-size: 0.85rem; opacity: 0.8;">Click a tile type above, then click on the canvas to paint.</p>
+                <p style="font-size: 0.85rem; opacity: 0.8;">Click a tile type above, then click on the canvas to paint.
+                </p>
                 <div id="tilePalette" class="map-tile-palette">
-                    </div>
-                
+                </div>
+
 
                 <h3>Map Canvas</h3>
                 <canvas id="mapEditorCanvas"></canvas>
@@ -346,14 +557,14 @@
 
                 <h3>Transitions</h3>
                 <div id="transitionsList">
-                    </div>
+                </div>
                 <button id="addTransition" class="add-item">➕ Add New Transition</button>
-                
+
                 <hr style="border-color: #4a5568; margin: 25px 0;">
 
                 <h3>Entities on Map</h3>
                 <div id="mapEntitiesList">
-                    </div>
+                </div>
                 <button id="addEntityOnMap" class="add-item">➕ Add New Entity on Map</button>
 
                 <div style="margin-top: 30px; text-align: right;">
@@ -368,7 +579,7 @@
             <div id="entityListContainer" class="list-container">
                 <h3>Existing Entities</h3>
                 <div id="entitiesList">
-                    </div>
+                </div>
                 <button id="addNewEntity" class="add-item">➕ Add New Entity</button>
             </div>
 
@@ -392,7 +603,7 @@
                 </div>
 
                 <hr style="border-color: #4a5568; margin: 25px 0;">
-                
+
                 <h3>Dialogue States</h3>
                 <div id="dialogueStatesList">
                     <p style="opacity: 0.7; font-style: italic;">No dialogue states defined yet.</p>
@@ -412,12 +623,41 @@
                 <h3>Dialogue Simulator</h3>
                 <div id="dialogueSimulator" class="modal-section">
                     <p>Click "Start Simulation" to test this entity's dialogue.</p>
-                    <div id="simulatorOutput" style="background-color: #1a202c; padding: 10px; border-radius: 5px; min-height: 80px; overflow-y: auto; margin-bottom: 10px;">
+                    <div id="simulatorOutput">
+                    </div>
+                    <div id="simulatorOptions" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    </div>
+
+                    <div id="simulatedGameStatePanel" class="modal-section">
+                        <h4 id="toggleSimulatedGameState">Player State Controls (Click to Toggle) ▼</h4>
+                        <div id="simulatedGameStateContent">
+                            <div class="sim-control-group">
+                                <label for="simMoneyInput">Simulated Money ($):</label>
+                                <input type="number" id="simMoneyInput" min="0">
+                                <button id="updateSimMoney">Update Money</button>
+                            </div>
+
+                            <div class="sim-control-group">
+                                <h5>Simulated Backpack:</h5>
+                                <div id="simBackpackList">
+                                </div>
+                                <input type="text" id="simBackpackAddItemName" placeholder="Item ID">
+                                <input type="number" id="simBackpackAddItemQuantity" value="1" min="1">
+                                <button id="simBackpackAddItem" class="add-item">Add Item</button>
+                            </div>
+
+                            <div class="sim-control-group">
+                                <h5>Simulated Quests:</h5>
+                                <div id="simQuestsList">
+                                </div>
+                            </div>
                         </div>
-                    <div id="simulatorOptions" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                        </div>
+                    </div>
+
+
                     <button id="startDialogueSimulation" style="margin-top: 15px;">▶️ Start Simulation</button>
-                    <button id="resetDialogueSimulation" style="margin-top: 15px; display: none;" class="delete">🔄 Reset Simulation</button>
+                    <button id="resetDialogueSimulation" style="margin-top: 15px; display: none;" class="delete">🔄
+                        Reset Simulation</button>
                 </div>
 
 
@@ -452,7 +692,7 @@
                 <label for="modalStateTextInput">Dialogue Text:</label>
                 <textarea id="modalStateTextInput"></textarea>
             </div>
-            
+
             <div class="modal-section">
                 <h4>Options</h4>
                 <div id="modalDialogueOptionsList">
@@ -479,7 +719,7 @@
             <div class="form-group">
                 <label for="modalOptionNextStateInput">Next State ID:</label>
                 <select id="modalOptionNextStateInput">
-                    </select>
+                </select>
             </div>
 
             <div class="modal-section">
@@ -504,11 +744,11 @@
             <div class="form-group">
                 <label for="actionTypeSelect">Action Type:</label>
                 <select id="actionTypeSelect">
-                    </select>
+                </select>
             </div>
             <div id="actionParameters" class="modal-section">
                 <h4>Parameters</h4>
-                </div>
+            </div>
             <div class="modal-actions">
                 <button id="saveAction">✅ Save Action</button>
                 <button id="cancelActionEditing" class="delete">❌ Cancel</button>
@@ -523,7 +763,7 @@
             <div class="form-group">
                 <label for="logicRuleTargetStateInput">Target Dialogue State:</label>
                 <select id="logicRuleTargetStateInput">
-                    </select>
+                </select>
             </div>
 
             <div class="modal-section">
@@ -551,11 +791,11 @@
                     <option value="">-- Select --</option>
                     <option value="questStatus">Quest Status</option>
                     <option value="hasItem">Has Item</option>
-                    </select>
+                </select>
             </div>
             <div id="conditionParameters" class="modal-section">
                 <h4>Parameters</h4>
-                </div>
+            </div>
             <div class="modal-actions">
                 <button id="saveCondition">✅ Save Condition</button>
                 <button id="cancelConditionEditing" class="delete">❌ Cancel</button>
@@ -568,9 +808,11 @@
     <script src="../js/state.js"></script>
     <script src="../js/entities.js"></script>
     <script src="../js/crafting.js"></script>
+
     <script src="builder-utils.js"></script>
     <script src="builder-maps.js"></script>
     <script src="builder-entities.js"></script>
     <script src="builder.js"></script>
 </body>
+
 </html>
