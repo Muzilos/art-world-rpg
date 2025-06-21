@@ -224,7 +224,6 @@ function saveDialogueState() {
     }
 
     if (!entity.dialogue[newStateId]) {
-        // This case should ideally be handled by addDialogueStateBtn, but as a safeguard
         entity.dialogue[newStateId] = { text: newText, options: [] }; /* */
     } else {
         entity.dialogue[newStateId].text = newText; /* */
@@ -306,9 +305,16 @@ function renderActionsInModal(actions) {
 
     actions.forEach((action, index) => {
         const actionMeta = gameActionMetadata[action.id] || { name: action.id, parameters: [] }; /* */
-        const paramsSummary = Object.keys(action.params || {}).map(key => `${key}: ${JSON.stringify(action.params[key])}`).join(', '); /* */
+        const paramsSummary = Object.keys(action.params || {}).map(key => {
+            let value = action.params[key];
+            if (Array.isArray(value)) {
+                value = `[${value.join(', ')}]`;
+            }
+            return `${key}: ${JSON.stringify(value)}`;
+        }).join(', '); /* */
+
         const listItem = createListItem(
-            `${actionMeta.name} (${paramsSummary || 'No params'})`,
+            `${actionMeta.name} (${paramsSummary || 'No params'})`, /* */
             () => openActionModal(index),
             () => deleteOptionAction(index),
             index
@@ -399,6 +405,7 @@ function populateActionTypeDropdown(selectedActionId) {
 
 /**
  * Renders dynamic parameter inputs for the selected action type.
+ * **IMPROVED LIST HANDLING HERE**
  * @param {string} actionId The ID of the selected action type.
  * @param {object} params The current parameters for the action.
  */
@@ -424,19 +431,27 @@ function renderActionParameters(actionId, params = {}) {
                 inputElement = document.createElement('input');
                 inputElement.type = 'text';
                 inputElement.value = params[param.name] || param.defaultValue || ''; /* */
+                inputElement.id = `action-param-${param.name}`;
+                inputElement.name = param.name;
+                formGroup.appendChild(inputElement);
                 break;
             case 'number':
                 inputElement = document.createElement('input');
                 inputElement.type = 'number';
                 inputElement.value = params[param.name] || param.defaultValue || 0; /* */
+                inputElement.id = `action-param-${param.name}`;
+                inputElement.name = param.name;
+                formGroup.appendChild(inputElement);
                 break;
             case 'textarea':
                 inputElement = document.createElement('textarea');
                 inputElement.value = params[param.name] || param.defaultValue || ''; /* */
+                inputElement.id = `action-param-${param.name}`;
+                inputElement.name = param.name;
+                formGroup.appendChild(inputElement);
                 break;
             case 'select':
                 inputElement = document.createElement('select');
-                // Options can be a direct array or a function that returns an array
                 const options = typeof param.options === 'function' ? param.options() : param.options; /* */
                 options.forEach(optValue => {
                     const option = document.createElement('option');
@@ -445,42 +460,103 @@ function renderActionParameters(actionId, params = {}) {
                     inputElement.appendChild(option);
                 });
                 inputElement.value = params[param.name] || '';
-                break;
-            case 'list(number)': // For XP amounts
-            case 'list(string)': // For skills
-                // This is a simplified representation. For a real builder, this would be a sub-editor
-                // allowing adding/removing items from the list. For now, a comma-separated string.
-                inputElement = document.createElement('input');
-                inputElement.type = 'text';
-                inputElement.placeholder = `Comma-separated ${param.type.replace('list(', '').replace(')', '')}s`;
-                inputElement.value = (params[param.name] || []).join(', ');
-                // Add a hidden element to store the parsed array
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.className = `hidden-list-param-${param.name}`;
-                inputElement.addEventListener('input', (e) => {
-                    hiddenInput.value = e.target.value.split(',').map(s => s.trim());
-                    if (param.type === 'list(number)') {
-                        hiddenInput.value = hiddenInput.value.map(Number).filter(n => !isNaN(n));
-                    }
-                });
-                // Initialize hidden value if 'params' already has it
-                hiddenInput.value = JSON.stringify(params[param.name] || []);
+                inputElement.id = `action-param-${param.name}`;
+                inputElement.name = param.name;
                 formGroup.appendChild(inputElement);
-                formGroup.appendChild(hiddenInput);
+                break;
+            case 'list(number)': // Improved list handling
+            case 'list(string)': // Improved list handling
+                const listContainer = document.createElement('div');
+                listContainer.id = `list-container-${param.name}`;
+                listContainer.style.border = '1px dashed #60a5fa';
+                listContainer.style.padding = '10px';
+                listContainer.style.borderRadius = '5px';
+                listContainer.style.marginTop = '5px';
+                listContainer.style.maxHeight = '200px';
+                listContainer.style.overflowY = 'auto';
+
+                const currentList = params[param.name] || [];
+
+                const renderListItems = () => {
+                    listContainer.innerHTML = '';
+                    if (currentList.length === 0) {
+                        listContainer.innerHTML = '<p style="opacity:0.7; font-style:italic;">No items yet.</p>';
+                    }
+                    currentList.forEach((itemValue, itemIndex) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.style.display = 'flex';
+                        itemDiv.style.alignItems = 'center';
+                        itemDiv.style.marginBottom = '5px';
+                        
+                        let itemInput;
+                        if (param.type === 'list(number)') {
+                            itemInput = document.createElement('input');
+                            itemInput.type = 'number';
+                            itemInput.value = itemValue;
+                        } else { // list(string)
+                            itemInput = document.createElement('input');
+                            itemInput.type = 'text';
+                            itemInput.value = itemValue;
+                        }
+                        itemInput.style.flexGrow = '1';
+                        itemInput.style.marginRight = '8px';
+                        itemInput.dataset.index = itemIndex; // To identify which item is being edited
+                        itemInput.addEventListener('change', (e) => {
+                            if (param.type === 'list(number)') {
+                                currentList[itemIndex] = Number(e.target.value);
+                            } else {
+                                currentList[itemIndex] = e.target.value;
+                            }
+                        });
+                        itemDiv.appendChild(itemInput);
+
+                        const deleteItemBtn = document.createElement('button');
+                        deleteItemBtn.textContent = 'X';
+                        deleteItemBtn.classList.add('delete');
+                        deleteItemBtn.style.padding = '4px 8px';
+                        deleteItemBtn.style.fontSize = '0.7rem';
+                        deleteItemBtn.style.minWidth = 'unset';
+                        deleteItemBtn.style.height = 'unset';
+                        deleteItemBtn.style.marginRight = '0';
+                        deleteItemBtn.addEventListener('click', () => {
+                            currentList.splice(itemIndex, 1);
+                            renderListItems(); // Re-render the list
+                        });
+                        itemDiv.appendChild(deleteItemBtn);
+                        listContainer.appendChild(itemDiv);
+                    });
+                };
+
+                const addItemBtn = document.createElement('button');
+                addItemBtn.textContent = `➕ Add ${param.type.replace('list(', '').replace(')', '')}`;
+                addItemBtn.classList.add('add-item');
+                addItemBtn.style.marginTop = '10px';
+                addItemBtn.style.width = 'fit-content';
+                addItemBtn.style.fontSize = '0.9rem';
+                addItemBtn.addEventListener('click', () => {
+                    currentList.push(param.type === 'list(number)' ? 0 : ''); // Add default empty value
+                    renderListItems();
+                });
+
+                formGroup.appendChild(listContainer);
+                formGroup.appendChild(addItemBtn);
+                renderListItems(); // Initial render of list items
+
+                // Store the currentList array directly on the formGroup, for retrieval during save
+                formGroup.dataset.paramName = param.name;
+                formGroup.dataset.paramType = param.type;
+                formGroup.currentList = currentList; // Attach the array directly
                 break;
             default:
                 inputElement = document.createElement('input');
                 inputElement.type = 'text';
                 inputElement.value = params[param.name] || '';
+                inputElement.id = `action-param-${param.name}`;
+                inputElement.name = param.name;
+                formGroup.appendChild(inputElement);
                 break;
         }
-        if (param.type !== 'list(number)' && param.type !== 'list(string)') {
-             inputElement.id = `action-param-${param.name}`;
-             inputElement.name = param.name; // Use name for easy retrieval later
-             formGroup.appendChild(inputElement);
-        }
-
+        
         actionParametersDiv.appendChild(formGroup);
     });
 }
@@ -499,11 +575,10 @@ function saveAction() {
     const actionMeta = gameActionMetadata[newActionId]; /* */
     if (actionMeta && actionMeta.parameters) { /* */
         actionMeta.parameters.forEach(param => { /* */
-            if (param.type === 'list(number)' || param.type === 'list(string)') {
-                // Retrieve from the hidden input for list types
-                const hiddenInput = actionParametersDiv.querySelector(`.hidden-list-param-${param.name}`);
-                if (hiddenInput && hiddenInput.value) {
-                    newParams[param.name] = JSON.parse(hiddenInput.value);
+            if (param.type.startsWith('list(')) { // Retrieve from the directly attached array
+                const formGroup = actionParametersDiv.querySelector(`[data-param-name="${param.name}"]`);
+                if (formGroup && formGroup.currentList) {
+                    newParams[param.name] = formGroup.currentList;
                 } else {
                     newParams[param.name] = [];
                 }
@@ -625,9 +700,9 @@ function renderConditionsInModal(conditions) {
 
     conditions.forEach((condition, index) => {
         let summary = 'Unknown Condition';
-        if (condition.type === 'questStatus') {
+        if (condition.type === 'questStatus') { /* */
             summary = `Quest '${condition.questId}' is '${condition.status}'`; /* */
-        } else if (condition.type === 'hasItem') {
+        } else if (condition.type === 'hasItem') { /* */
             summary = `Has '${condition.itemId}' (${condition.quantity || 1})`; /* */
         }
 
