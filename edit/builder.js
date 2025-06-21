@@ -22,3 +22,23 @@ document.addEventListener('DOMContentLoaded', () => {
     exportDataBtn.addEventListener('click', exportGameData); // From builder-utils.js
     importDataInput.addEventListener('change', importGameData); // From builder-utils.js
 });
+
+/**
+ * Overriding switchSection from builder-utils to include new module render calls
+ * after the DOM is ready and modules are loaded.
+ * This is a common pattern when a core utility is refined by later loaded modules.
+ */
+// This should be at the end of builder.js, after builder-modules.js is loaded
+const originalSwitchSection = switchSection; // Store the utility function
+
+switchSection = function(sectionToActivate, navButtonToActivate) {
+    originalSwitchSection(sectionToActivate, navButtonToActivate); // Call original behavior
+
+    if (sectionToActivate === questsSection && typeof renderQuestList === 'function') {
+        renderQuestList();
+    } else if (sectionToActivate === skillsSection && typeof renderSkillList === 'function') {
+        renderSkillList();
+    } else if (sectionToActivate === craftingSection && typeof renderCraftingRecipeList === 'function') {
+        renderCraftingRecipeList();
+    }
+};

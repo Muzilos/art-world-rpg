@@ -101,6 +101,8 @@
             display: block;
             /* Ensure no extra space below canvas */
             margin-top: 15px;
+            cursor: cell;
+            /* Indicate drawing mode */
         }
 
         .map-tile-palette {
@@ -545,7 +547,7 @@
 
                 <h3>Tile Palette</h3>
                 <p style="font-size: 0.85rem; opacity: 0.8;">Click a tile type above, then click on the canvas to paint.
-                </p>
+                    Use click-and-drag for faster painting.</p>
                 <div id="tilePalette" class="map-tile-palette">
                 </div>
 
@@ -651,6 +653,11 @@
                                 <div id="simQuestsList">
                                 </div>
                             </div>
+                            <div class="sim-control-group">
+                                <h5>Simulated Skills:</h5>
+                                <div id="simSkillsList">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -670,17 +677,118 @@
 
         <div id="questsSection" class="module-section">
             <h2>Quests Builder</h2>
-            <p style="opacity: 0.7;">Coming Soon...</p>
+            <div id="questListContainer" class="list-container">
+                <h3>Existing Quests</h3>
+                <div id="questsList">
+                </div>
+                <button id="addNewQuest" class="add-item">➕ Add New Quest</button>
+            </div>
+            <div id="questEditor" class="map-details" style="display: none;">
+                <h3>Edit Quest: <span id="currentQuestIdDisplay"></span></h3>
+                <div class="form-group">
+                    <label for="questIdInputEditor">Quest ID:</label>
+                    <input type="text" id="questIdInputEditor" readonly>
+                </div>
+                <p style="opacity: 0.7;">Quest status (`not_started`, `accepted`, `in_progress`, `completed`,
+                    `rewarded`) is managed via dialogue actions and logic rules.</p>
+                <div style="margin-top: 30px; text-align: right;">
+                    <button id="saveQuestChanges">✅ Save Quest Changes</button>
+                    <button id="cancelQuestEditing" class="delete">❌ Cancel Editing</button>
+                </div>
+            </div>
         </div>
 
         <div id="skillsSection" class="module-section">
             <h2>Skills Builder</h2>
-            <p style="opacity: 0.7;">Coming Soon...</p>
+            <div id="skillListContainer" class="list-container">
+                <h3>Existing Skills</h3>
+                <div id="skillsList">
+                </div>
+                <button id="addNewSkill" class="add-item">➕ Add New Skill</button>
+            </div>
+            <div id="skillEditor" class="map-details" style="display: none;">
+                <h3>Edit Skill: <span id="currentSkillIdDisplay"></span></h3>
+                <div class="form-group">
+                    <label for="skillIdInputEditor">Skill ID:</label>
+                    <input type="text" id="skillIdInputEditor" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="skillAbbrInput">Abbreviation:</label>
+                    <input type="text" id="skillAbbrInput" maxlength="3" placeholder="e.g., DRW">
+                </div>
+                <div class="form-group">
+                    <label for="skillIconInput">Icon (Emoji or URL):</label>
+                    <input type="text" id="skillIconInput" placeholder="e.g., ✏️">
+                </div>
+                <p style="opacity: 0.7;">Level, XP, and XP to Next Level are managed dynamically by game logic.</p>
+                <div style="margin-top: 30px; text-align: right;">
+                    <button id="saveSkillChanges">✅ Save Skill Changes</button>
+                    <button id="cancelSkillEditing" class="delete">❌ Cancel Editing</button>
+                </div>
+            </div>
         </div>
 
         <div id="craftingSection" class="module-section">
             <h2>Crafting Recipes Builder</h2>
-            <p style="opacity: 0.7;">Coming Soon...</p>
+            <div id="craftingRecipeListContainer" class="list-container">
+                <h3>Existing Recipes</h3>
+                <div id="craftingRecipesList">
+                </div>
+                <button id="addNewRecipe" class="add-item">➕ Add New Recipe</button>
+            </div>
+            <div id="craftingRecipeEditor" class="map-details" style="display: none;">
+                <h3>Edit Recipe: <span id="currentRecipeIdDisplay"></span></h3>
+                <div class="form-group">
+                    <label for="recipeIdInput">Recipe ID:</label>
+                    <input type="text" id="recipeIdInput" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="recipeNameInput">Name:</label>
+                    <input type="text" id="recipeNameInput">
+                </div>
+                <div class="form-group">
+                    <label for="recipeTimeInput">Crafting Time (units):</label>
+                    <input type="number" id="recipeTimeInput" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="recipeSkillSelect">Required Skill:</label>
+                    <select id="recipeSkillSelect">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recipeMinLevelInput">Minimum Skill Level:</label>
+                    <input type="number" id="recipeMinLevelInput" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="recipeValueInput">Sell Value ($):</label>
+                    <input type="number" id="recipeValueInput" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="recipeEnergyInput">Energy Cost:</label>
+                    <input type="number" id="recipeEnergyInput" min="0">
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="recipeUnlockedCheckbox">
+                    <label for="recipeUnlockedCheckbox" style="display: inline-block; margin-left: 5px;">Unlocked by
+                        Default</label>
+                </div>
+
+                <div class="modal-section">
+                    <h4>Materials Required</h4>
+                    <div id="recipeMaterialsList">
+                    </div>
+                    <input type="text" id="addMaterialIdInput" placeholder="Material ID">
+                    <input type="number" id="addMaterialQuantityInput" value="1" min="0.1" step="0.1"
+                        style="width: 80px;">
+                    <button id="addRecipeMaterial" class="add-item" style="display: inline-block;">➕ Add
+                        Material</button>
+                </div>
+
+                <div style="margin-top: 30px; text-align: right;">
+                    <button id="saveRecipeChanges">✅ Save Recipe Changes</button>
+                    <button id="cancelRecipeEditing" class="delete">❌ Cancel Editing</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -803,6 +911,61 @@
         </div>
     </div>
 
+    <div id="transitionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="transitionModal">&times;</span>
+            <h3>Edit Transition</h3>
+            <div class="form-group">
+                <label for="transXInput">Current Map X:</label>
+                <input type="number" id="transXInput" min="0">
+            </div>
+            <div class="form-group">
+                <label for="transYInput">Current Map Y:</label>
+                <input type="number" id="transYInput" min="0">
+            </div>
+            <div class="form-group">
+                <label for="transTargetMapSelect">Target Map ID:</label>
+                <select id="transTargetMapSelect">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="transTargetXInput">Target Map X:</label>
+                <input type="number" id="transTargetXInput" min="0">
+            </div>
+            <div class="form-group">
+                <label for="transTargetYInput">Target Map Y:</label>
+                <input type="number" id="transTargetYInput" min="0">
+            </div>
+            <div class="modal-actions">
+                <button id="saveTransition">✅ Save Transition</button>
+                <button id="cancelTransitionEditing" class="delete">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mapEntityModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" data-modal-id="mapEntityModal">&times;</span>
+            <h3>Edit Entity on Map</h3>
+            <div class="form-group">
+                <label for="mapEntityIdSelect">Entity ID:</label>
+                <select id="mapEntityIdSelect">
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="mapEntityXInput">X Coordinate:</label>
+                <input type="number" id="mapEntityXInput" min="0">
+            </div>
+            <div class="form-group">
+                <label for="mapEntityYInput">Y Coordinate:</label>
+                <input type="number" id="mapEntityYInput" min="0">
+            </div>
+            <div class="modal-actions">
+                <button id="saveMapEntity">✅ Save Map Entity</button>
+                <button id="cancelMapEntityEditing" class="delete">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/maps.js"></script>
     <script src="../js/state.js"></script>
@@ -812,6 +975,7 @@
     <script src="builder-utils.js"></script>
     <script src="builder-maps.js"></script>
     <script src="builder-entities.js"></script>
+    <script src="builder-modules.js"></script>
     <script src="builder.js"></script>
 </body>
 
