@@ -10,28 +10,25 @@
 </head>
 
 <body>
-  <!-- Game Header -->
   <div class="game-header">
     <h1>🎨 Art World RPG</h1>
   </div>
 
-  <!-- Main Game Layout -->
   <div class="game-main">
-    <!-- Game Canvas Container -->
     <div class="game-canvas-container">
       <div class="loading-screen hidden" id="loadingScreen">
         <div class="loader"></div>
       </div>
 
-      <!-- Game Canvas -->
       <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-      <!-- Money Display Overlay -->
       <div class="money-overlay" id="moneyOverlay">
         $<span id="moneyText">50</span>
       </div>
 
-      <!-- Dialogue Overlay (positioned over canvas) -->
+      <div class="message-log-overlay" id="gameMessageLog">
+        </div>
+
       <div class="dialogue-overlay hidden" id="dialogueBox">
         <div class="dialogue-backdrop hidden" id="dialogueBackdrop"></div>
         <div class="dialogue-header" id="dialogueHeader">
@@ -46,9 +43,7 @@
       </div>
     </div>
 
-    <!-- Right Sidebar with UI Panels -->
     <div class="game-sidebar">
-      <!-- Well-being Panel -->
       <div class="sidebar-panel hp-panel">
         <div class="panel-header">
           💚 Well-being
@@ -59,7 +54,6 @@
         </div>
       </div>
 
-      <!-- Energy Panel -->
       <div class="sidebar-panel hp-panel">
         <div class="panel-header">
           ⚡ Energy
@@ -71,17 +65,14 @@
         </div>
       </div>
 
-      <!-- Art Supplies Panel -->
       <div class="sidebar-panel backpack-panel">
         <div class="panel-header">
           🎒 Art Supplies
         </div>
         <div id="backpackList">
-          <!-- Backpack items will be dynamically generated here -->
-        </div>
+          </div>
       </div>
 
-      <!-- Skills Panel -->
       <div class="sidebar-panel stats-panel" id="statsPanel">
         <div class="panel-header">
           📊 Artistic Skills
@@ -89,44 +80,26 @@
         <button class="stats-toggle" id="toggleStatsPanel">Toggle Details</button>
         <div class="collapsible-content" id="statsContent">
           <div id="skillList">
-            <!-- Skill rows will be dynamically generated here -->
-          </div>
+            </div>
         </div>
-      </div>
-
-      <!-- Crafting Panel -->
-      <div class="sidebar-panel stats-panel">
-        <div class="panel-header">
-          🎨 Create Art
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;">
-          <button id="craft_pencil_sketch" class="stats-toggle" onclick="startCrafting('pencil_sketch')"
-            style="padding: 6px 4px; font-size: 10px;">
-            ✏️ Sketch
-          </button>
-          <button id="craft_watercolor_painting" class="stats-toggle" onclick="startCrafting('watercolor_painting')"
-            style="padding: 6px 4px; font-size: 10px;">
-            🎨 Watercolor
-          </button>
-          <button id="craft_oil_painting" class="stats-toggle" onclick="startCrafting('oil_painting')"
-            style="padding: 6px 4px; font-size: 10px;">
-            🖼️ Oil Paint
-          </button>
-          <button id="craft_clay_sculpture" class="stats-toggle" onclick="startCrafting('clay_sculpture')"
-            style="padding: 6px 4px; font-size: 10px;">
-            🗿 Sculpture
-          </button>
-        </div>
-        <div id="craftingStatus" style="font-size: 10px; color: #a0aec0; min-height: 20px;"></div>
-        <button id="cancelCrafting" onclick="cancelCrafting()"
-          style="display: none; padding: 4px 8px; font-size: 10px; background: #f56565; margin-top: 4px;">
-          Cancel
-        </button>
       </div>
     </div>
   </div>
 
-  <!-- Game Scripts -->
+  <div id="craftingGuideModal" class="dialogue-overlay hidden">
+    <div class="dialogue-backdrop hidden"></div>
+    <div class="dialogue-header">
+      <span id="craftingSkillIcon">✨</span>
+      <span id="craftingSkillName">Crafting Guide</span>
+    </div>
+    <div class="dialogue-content">
+      <p class="dialogue-text" id="craftingSkillLevel">Level: 1</p>
+      <div id="craftingRecipesList" class="dialogue-options" style="flex-direction: column; gap: 10px;">
+        </div>
+      <button class="close-button" id="closeCraftingGuide">Close Guide</button>
+    </div>
+  </div>
+
   <script src="js/entities.js"></script>
   <script src="js/state.js"></script>
   <script src="js/maps.js"></script>
@@ -134,9 +107,9 @@
   <script src="js/pathfinding.js"></script>
   <script src="js/drawing.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/crafting_recipes.js"></script>
   <script src="js/crafting.js"></script>
 
-  <script src="migration1.js"></script>
   <script src="js/main.js"></script>
 </body>
 

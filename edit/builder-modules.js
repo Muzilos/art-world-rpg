@@ -37,10 +37,15 @@ const recipeMinLevelInput = document.getElementById('recipeMinLevelInput');
 const recipeValueInput = document.getElementById('recipeValueInput');
 const recipeEnergyInput = document.getElementById('recipeEnergyInput');
 const recipeUnlockedCheckbox = document.getElementById('recipeUnlockedCheckbox');
-const recipeMaterialsList = document.getElementById('recipeMaterialsList');
-const addMaterialIdInput = document.getElementById('addMaterialIdInput');
-const addMaterialQuantityInput = document.getElementById('addMaterialQuantityInput');
-const addRecipeMaterialBtn = document.getElementById('addRecipeMaterial');
+
+// New crafting input/output fields
+const recipeInput1IdInput = document.getElementById('recipeInput1IdInput');
+const recipeConsume1Input = document.getElementById('recipeConsume1Input');
+const recipeInput2IdInput = document.getElementById('recipeInput2IdInput');
+const recipeConsume2Input = document.getElementById('recipeConsume2Input');
+const recipeOutputIdInput = document.getElementById('recipeOutputIdInput');
+const recipeOutputQuantityInput = document.getElementById('recipeOutputQuantityInput');
+
 const saveRecipeChangesBtn = document.getElementById('saveRecipeChanges');
 const cancelRecipeEditingBtn = document.getElementById('cancelRecipeEditing');
 
@@ -211,28 +216,13 @@ function editCraftingRecipe(index) {
     }
     recipeSkillSelect.value = recipe.skill; /* */
 
-    renderRecipeMaterials(recipe.materials);
-}
-
-function renderRecipeMaterials(materials) {
-    recipeMaterialsList.innerHTML = '';
-    if (Object.keys(materials).length === 0) {
-        recipeMaterialsList.innerHTML = '<p style="opacity: 0.7; font-style: italic;">No materials required.</p>';
-        return;
-    }
-
-    for (const materialId in materials) {
-        const quantity = materials[materialId];
-        const div = document.createElement('div');
-        div.className = 'list-item';
-        div.style.backgroundColor = 'transparent'; // Override list-item background
-        div.style.borderBottom = 'none'; // Override list-item border
-        div.innerHTML = `
-            <span>${materialId} (x${quantity})</span>
-            <button class="delete-recipe-material-btn delete" data-material-id="${materialId}" style="margin-right: 0;">X</button>
-        `;
-        recipeMaterialsList.appendChild(div);
-    }
+    // Populate new input/output fields
+    recipeInput1IdInput.value = recipe.input1 || '';
+    recipeConsume1Input.value = recipe.consume1 || 0;
+    recipeInput2IdInput.value = recipe.input2 || '';
+    recipeConsume2Input.value = recipe.consume2 || 0;
+    recipeOutputIdInput.value = recipe.output || '';
+    recipeOutputQuantityInput.value = recipe.outputQuantity || 1;
 }
 
 function saveRecipeChanges() {
@@ -249,7 +239,31 @@ function saveRecipeChanges() {
         alert("Crafting time must be a positive number.");
         return;
     }
-    // ... add more validation as needed
+    if (isNaN(recipeValueInput.value) || recipeValueInput.value < 0) {
+        alert("Sell Value must be a non-negative number.");
+        return;
+    }
+    if (isNaN(recipeEnergyInput.value) || recipeEnergyInput.value < 0) {
+        alert("Energy Cost must be a non-negative number.");
+        return;
+    }
+    if (!recipeInput1IdInput.value.trim() || !recipeInput2IdInput.value.trim()) {
+        alert("Both Input Item IDs are required.");
+        return;
+    }
+    if (isNaN(recipeConsume1Input.value) || recipeConsume1Input.value < 0 || isNaN(recipeConsume2Input.value) || recipeConsume2Input.value < 0) {
+        alert("Consumed Quantities must be non-negative numbers.");
+        return;
+    }
+    if (!recipeOutputIdInput.value.trim()) {
+        alert("Output Item ID is required.");
+        return;
+    }
+    if (isNaN(recipeOutputQuantityInput.value) || recipeOutputQuantityInput.value <= 0) {
+        alert("Output Quantity must be a positive number.");
+        return;
+    }
+
 
     recipe.name = recipeNameInput.value.trim(); /* */
     recipe.time = parseInt(recipeTimeInput.value); /* */
@@ -259,7 +273,14 @@ function saveRecipeChanges() {
     recipe.energy = parseInt(recipeEnergyInput.value); /* */
     recipe.unlocked = recipeUnlockedCheckbox.checked; /* */
 
-    // Materials are updated directly through add/delete Material handlers
+    // Update new input/output fields
+    recipe.input1 = recipeInput1IdInput.value.trim();
+    recipe.consume1 = parseFloat(recipeConsume1Input.value);
+    recipe.input2 = recipeInput2IdInput.value.trim();
+    recipe.consume2 = parseFloat(recipeConsume2Input.value);
+    recipe.output = recipeOutputIdInput.value.trim();
+    recipe.outputQuantity = parseInt(recipeOutputQuantityInput.value);
+
 
     alert(`Recipe "${recipe.name}" changes saved!`);
     currentEditingRecipeIndex = null;
@@ -361,7 +382,12 @@ addNewRecipeBtn.addEventListener('click', () => {
         const newRecipe = {
             id: newRecipeId,
             name: `New Recipe (${newRecipeId})`, /* */
-            materials: {}, /* */
+            input1: '', // New fields
+            consume1: 0,
+            input2: '',
+            consume2: 0,
+            output: '',
+            outputQuantity: 1,
             time: 100, /* */
             skill: Object.keys(builderSkillAbbreviations)[0] || 'drawing', // Default to first skill or drawing
             minLevel: 1, /* */
@@ -381,34 +407,6 @@ craftingRecipesList.addEventListener('click', (e) => {
         editCraftingRecipe(index);
     } else if (targetButton.classList.contains('delete-btn')) {
         deleteCraftingRecipe(index);
-    }
-});
-
-addRecipeMaterialBtn.addEventListener('click', () => {
-    if (currentEditingRecipeIndex === null) return;
-    const recipe = builderCraftingRecipes[currentEditingRecipeIndex];
-    const materialId = addMaterialIdInput.value.trim();
-    const quantity = parseFloat(addMaterialQuantityInput.value); // Use parseFloat for quantities like 0.1
-
-    if (!materialId || isNaN(quantity) || quantity <= 0) {
-        alert("Please enter a valid material ID and a positive quantity.");
-        return;
-    }
-
-    recipe.materials[materialId] = quantity; /* */
-    renderRecipeMaterials(recipe.materials);
-    addMaterialIdInput.value = '';
-    addMaterialQuantityInput.value = '1';
-});
-
-recipeMaterialsList.addEventListener('click', (e) => {
-    if (e.target.classList.contains('delete-recipe-material-btn')) {
-        const materialId = e.target.dataset.materialId;
-        const recipe = builderCraftingRecipes[currentEditingRecipeIndex];
-        if (confirm(`Are you sure you want to remove material "${materialId}" from this recipe?`)) {
-            delete recipe.materials[materialId]; /* */
-            renderRecipeMaterials(recipe.materials);
-        }
     }
 });
 

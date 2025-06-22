@@ -30,7 +30,7 @@ let ctx; // Canvas rendering context (for map editor)
 
 /**
  * Loads initial game data into the builder's internal state.
- * Assumes `maps`, `entities`, `gameState`, `skillAbbreviations`, `crafting` are globally available.
+ * Assumes `maps`, `entities`, `gameState`, `skillAbbreviations`, `craftingRecipes` are globally available.
  */
 function loadGameData() {
   // Deep copy to prevent direct modification of global game objects during editing
@@ -38,7 +38,8 @@ function loadGameData() {
   builderEntities = JSON.parse(JSON.stringify(entities));
   builderQuests = JSON.parse(JSON.stringify(gameState.quests));
   builderSkillAbbreviations = JSON.parse(JSON.stringify(skillAbbreviations));
-  builderCraftingRecipes = JSON.parse(JSON.stringify(crafting.recipes));
+  // --- UPDATED LINE BELOW ---
+  builderCraftingRecipes = JSON.parse(JSON.stringify(craftingRecipes)); // Now references the global craftingRecipes array
   console.log("Game data loaded into builder.", { builderMaps, builderEntities, builderQuests, builderSkillAbbreviations, builderCraftingRecipes });
 }
 

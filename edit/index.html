@@ -774,14 +774,35 @@
                 </div>
 
                 <div class="modal-section">
-                    <h4>Materials Required</h4>
-                    <div id="recipeMaterialsList">
+                    <h4>Inputs Required (One-to-One Combination)</h4>
+                    <div class="form-group">
+                        <label for="recipeInput1IdInput">Input 1 Item ID:</label>
+                        <input type="text" id="recipeInput1IdInput" placeholder="e.g., pencil">
                     </div>
-                    <input type="text" id="addMaterialIdInput" placeholder="Material ID">
-                    <input type="number" id="addMaterialQuantityInput" value="1" min="0.1" step="0.1"
-                        style="width: 80px;">
-                    <button id="addRecipeMaterial" class="add-item" style="display: inline-block;">➕ Add
-                        Material</button>
+                    <div class="form-group">
+                        <label for="recipeConsume1Input">Input 1 Quantity Consumed:</label>
+                        <input type="number" id="recipeConsume1Input" value="1" min="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeInput2IdInput">Input 2 Item ID:</label>
+                        <input type="text" id="recipeInput2IdInput" placeholder="e.g., paper">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeConsume2Input">Input 2 Quantity Consumed:</label>
+                        <input type="number" id="recipeConsume2Input" value="1" min="0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h4>Output Item</h4>
+                    <div class="form-group">
+                        <label for="recipeOutputIdInput">Output Item ID:</label>
+                        <input type="text" id="recipeOutputIdInput" placeholder="e.g., pencil_sketch">
+                    </div>
+                    <div class="form-group">
+                        <label for="recipeOutputQuantityInput">Output Quantity Produced:</label>
+                        <input type="number" id="recipeOutputQuantityInput" value="1" min="1">
+                    </div>
                 </div>
 
                 <div style="margin-top: 30px; text-align: right;">
@@ -970,8 +991,7 @@
     <script src="../js/maps.js"></script>
     <script src="../js/state.js"></script>
     <script src="../js/entities.js"></script>
-    <script src="../js/crafting.js"></script>
-
+    <script src="../js/crafting_recipes.js"></script>
     <script src="builder-utils.js"></script>
     <script src="builder-maps.js"></script>
     <script src="builder-entities.js"></script>

@@ -56,17 +56,10 @@ const showDialogue = (entity, stateKey) => { // Changed to const arrow function
                   const actionFunctionCreator = gameActions[actionObj.id];
 
                   if (typeof actionFunctionCreator === 'function') {
-                    let orderedParams;
-                    if (actionObj.id === 'gainXp') {
-                      orderedParams = [
-                        actionObj.params.amounts || [],
-                        actionObj.params.skills || []
-                      ];
-                    } else {
-                      orderedParams = actionDef.parameters.map(param => actionObj.params[param.name]);
-                    }
-
-                    const executableAction = actionFunctionCreator(...orderedParams);
+                    // Collect parameters dynamically based on metadata for the action
+                    const actionParams = actionDef.parameters.map(param => actionObj.params[param.name]);
+                    
+                    const executableAction = actionFunctionCreator(...actionParams);
 
                     if (typeof executableAction === 'function') {
                       const success = executableAction(gameState, entities);
@@ -103,3 +96,38 @@ const showDialogue = (entity, stateKey) => { // Changed to const arrow function
   document.getElementById('dialogueBox').classList.remove('hidden');
 };
 
+/**
+ * Displays a game message in the message log.
+ * @param {string} message The message text.
+ * @param {string} type The type of message ('info', 'success', 'warning', 'error').
+ */
+function showGameMessage(message, type = 'info') {
+  const messageLog = document.getElementById('gameMessageLog');
+  if (!messageLog) {
+    console.warn("Game message log element not found.", message);
+    return;
+  }
+
+  const msgElement = document.createElement('div');
+  msgElement.textContent = message;
+  msgElement.className = `game-message ${type}`;
+
+  // Prepend to show latest message at the top, but CSS uses column-reverse for visual bottom-up
+  messageLog.prepend(msgElement); 
+
+  // Limit number of messages to prevent overflow
+  const maxMessages = 10;
+  while (messageLog.children.length > maxMessages) {
+    messageLog.removeChild(messageLog.lastChild);
+  }
+
+  // Optional: fade out after some time
+  setTimeout(() => {
+    msgElement.style.opacity = '0';
+    setTimeout(() => {
+      if (msgElement.parentNode) {
+        msgElement.parentNode.removeChild(msgElement);
+      }
+    }, 500); // Remove after fade out transition
+  }, 5000); // Fade out after 5 seconds
+}

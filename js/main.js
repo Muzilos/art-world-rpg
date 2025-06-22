@@ -1,3 +1,8 @@
+const maps = {};
+const entities = {};
+const skillAbbreviations = {};
+const craftingRecipes = [];
+
 // === UTILITY FUNCTIONS ===
 /**
  * Checks if two sets of coordinates are adjacent (including diagonals).
@@ -338,8 +343,36 @@ function getAdjacentWalkableTiles(targetX, targetY, map) {
 }
 
 
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('game_data.json') // Path to your consolidated JSON file
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Assign loaded data to your global game state and constants
+      Object.assign(maps, data.maps); // Assuming data.maps holds the maps object
+      Object.assign(entities, data.entities);
+      Object.assign(gameState.quests, data.gameStateQuests);
+      Object.assign(skillAbbreviations, data.skillAbbreviations);
+      Object.assign(craftingRecipes, data.craftingRecipes); // Assuming craftingRecipes is updated
+
+      console.log("Game data loaded from JSON:", data);
+
+      // Now, initialize your game (call initializeEventListeners and requestAnimationFrame)
+      initializeEventListeners();
+      requestAnimationFrame(gameLoop);
+    })
+    .catch(error => {
+      console.error("Error loading game data:", error);
+      // Handle error, e.g., display a message to the user
+      document.getElementById('loadingScreen').textContent = 'Failed to load game data. Please ensure a local server is running.';
+    });
+});
 // Start the game loop when the window loads
-window.onload = function () {
-  initializeEventListeners();
-  requestAnimationFrame(gameLoop);
-}
+// window.onload = function () {
+//   initializeEventListeners();
+//   requestAnimationFrame(gameLoop);
+// }

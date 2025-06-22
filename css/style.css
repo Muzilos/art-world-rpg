@@ -138,6 +138,54 @@ body {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
+/* Message Log Overlay */
+.message-log-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 300px; /* Adjust width as needed */
+  max-height: 150px; /* Limit height */
+  background: rgba(26, 32, 44, 0.9);
+  backdrop-filter: blur(8px);
+  border: 2px solid #718096;
+  border-radius: 8px;
+  padding: 8px;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  overflow-y: auto; /* Enable scrolling for many messages */
+  display: flex;
+  flex-direction: column-reverse; /* New messages appear at bottom */
+}
+
+.game-message {
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  opacity: 0.9;
+  transition: opacity 0.5s ease-out;
+}
+
+.game-message.info {
+  color: #90cdf4; /* Blue */
+}
+
+.game-message.success {
+  color: #68d391; /* Green */
+  font-weight: bold;
+}
+
+.game-message.warning {
+  color: #ecc94b; /* Yellow */
+}
+
+.game-message.error {
+  color: #f56565; /* Red */
+  font-weight: bold;
+}
+
 .backpack-panel {
   flex: 0 0 200px;
   overflow-y: auto;
