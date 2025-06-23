@@ -1,20 +1,5 @@
-// // Skill abbreviations mapping for art world
-// const skillAbbreviations = {
-//   drawing: { abbr: 'DRW', icon: '✏️' },
-//   painting: { abbr: 'PNT', icon: '🎨' },
-//   sculpting: { abbr: 'SCL', icon: '🗿' },
-//   endurance: { abbr: 'END', icon: '💪' },
-//   influence: { abbr: 'INF', icon: '⭐' },
-//   creativity: { abbr: 'CRE', icon: '💡' },
-//   networking: { abbr: 'NET', icon: '🤝' },
-//   business: { abbr: 'BIZ', icon: '💼' },
-//   observation: { abbr: 'OBS', icon: '👁️' },
-//   patience: { abbr: 'PAT', icon: '⏳' }
-// };
-
-// The central game state object for Art World RPG
 const gameState = {
-  currentMap: 'art_district', // Starting in the art district
+  currentMap: 'apartment_living_room',
   clickMarker: { x: -1, y: -1, type: 'normal' },
   ui: {
     statsPanelCollapsed: false,
@@ -79,15 +64,5 @@ const gameState = {
       }
     }
   },
-  quests: {
-    // firstCommission: 'not_started', // Create a portrait for a client
-    // galleryShow: 'not_started',     // Get accepted into a gallery show
-    // mentorQuest: 'not_started',     // Find and learn from a master artist
-    // findHermit: 'not_started',      // Find the hermit
-    // rarePigment: 'not_started',      // Obtain the rare pigment
-    // artSchoolExploration: 'not_started',  // Explore the art school
-    // forestDepths: 'not_started',          // Explore the deeper forest
-    // mysticalArt: 'not_started',           // Create art with the mystical easel
-    // masterAllSkills: 'not_started',       // Reach level 3 in all art skills
-  }
+  quests: {}
 };

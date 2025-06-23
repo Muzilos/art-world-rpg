@@ -5,9 +5,14 @@
 
 // Ensure all global variables defined in builder-utils.js are accessible.
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadGameData(); // From builder-utils.js
-    switchSection(mapsSection, navMaps); // Initial render, from builder-utils.js
+document.addEventListener('DOMContentLoaded', async () => { // Made async
+    try {
+        await loadGameData(); // Await for the data to be loaded from JSON
+        switchSection(mapsSection, navMaps); // Initial render, from builder-utils.js, now data is guaranteed to be loaded
+    } catch (error) {
+        console.error("Failed to initialize builder due to data loading error:", error);
+        // Optionally display an error message on the UI
+    }
 
     // --- Global Event Listeners (remains in main builder.js) ---
 

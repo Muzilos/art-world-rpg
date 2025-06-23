@@ -29,18 +29,39 @@ const importDataInput = document.getElementById('importData');
 let ctx; // Canvas rendering context (for map editor)
 
 /**
- * Loads initial game data into the builder's internal state.
- * Assumes `maps`, `entities`, `gameState`, `skillAbbreviations`, `craftingRecipes` are globally available.
+ * Loads initial game data into the builder's internal state from game_data.json.
+ * This is now asynchronous.
+ * @returns {Promise<void>} A promise that resolves when data is loaded.
  */
-function loadGameData() {
-  // Deep copy to prevent direct modification of global game objects during editing
-  builderMaps = JSON.parse(JSON.stringify(maps));
-  builderEntities = JSON.parse(JSON.stringify(entities));
-  builderQuests = JSON.parse(JSON.stringify(gameState.quests));
-  builderSkillAbbreviations = JSON.parse(JSON.stringify(skillAbbreviations));
-  // --- UPDATED LINE BELOW ---
-  builderCraftingRecipes = JSON.parse(JSON.stringify(craftingRecipes)); // Now references the global craftingRecipes array
-  console.log("Game data loaded into builder.", { builderMaps, builderEntities, builderQuests, builderSkillAbbreviations, builderCraftingRecipes });
+async function loadGameData() {
+  console.log("Attempting to load game data for builder...");
+  // You might want a loading spinner here
+  // const loadingScreen = document.getElementById('loadingScreen'); // Assuming loading screen exists in builder
+  // if (loadingScreen) loadingScreen.style.display = 'flex';
+
+  try {
+    const response = await fetch('../game_data.json'); // Path relative to edit/
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    // Deep copy to prevent direct modification of original loaded objects during editing
+    builderMaps = JSON.parse(JSON.stringify(data.maps || {}));
+    builderEntities = JSON.parse(JSON.stringify(data.entities || {}));
+    builderQuests = JSON.parse(JSON.stringify(data.gameStateQuests || {})); // Note: this came from gameState.quests
+    builderSkillAbbreviations = JSON.parse(JSON.stringify(data.skillAbbreviations || {}));
+    builderCraftingRecipes = JSON.parse(JSON.stringify(data.craftingRecipes || []));
+
+    console.log("Game data loaded into builder successfully.", { builderMaps, builderEntities, builderQuests, builderSkillAbbreviations, builderCraftingRecipes });
+  } catch (error) {
+    console.error("Failed to load game data for builder:", error);
+    alert("Failed to load game data. Please ensure 'game_data.json' exists in the root directory and your editor is served by a local web server (e.g., http-server). " + error.message);
+    // if (loadingScreen) loadingScreen.style.display = 'none'; // Hide loading on error
+    throw error; // Re-throw to propagate error for builder.js to catch
+  } finally {
+    // if (loadingScreen) loadingScreen.style.display = 'none'; // Hide loading regardless of success/fail
+  }
 }
 
 /**
@@ -70,13 +91,13 @@ function switchSection(sectionToActivate, navButtonToActivate) {
 
 
 /**
- * Exports all builder data to a JSON file.
+ * Exports all builder data to a consolidated JSON file.
  */
 function exportGameData() {
   const dataToExport = {
     maps: builderMaps,
     entities: builderEntities,
-    gameStateQuests: builderQuests,
+    gameStateQuests: builderQuests, // Note: Quests are part of gameState
     skillAbbreviations: builderSkillAbbreviations,
     craftingRecipes: builderCraftingRecipes
   };
@@ -85,12 +106,12 @@ function exportGameData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'art_rpg_game_data.json';
+  a.download = 'game_data.json'; // Export as game_data.json
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  alert("Game data exported successfully!");
+  alert("Game data exported successfully as 'game_data.json'!");
 }
 
 /**
